@@ -1,51 +1,58 @@
 <!DOCTYPE html>
 <!--
-  Acorn Crew : politique de confidentialité, 7 langues (en, fr, es, de, pt-BR, ja, ko). Date d'effet : 2026-11-06.
+  Acorn Crew : politique de confidentialité, 9 langues (en, fr, es, de, pt-BR, ja, ko, it, zh-TW : celles du jeu, ui27).
+  Date d'effet : 2026-11-09 (la précédente : 2026-11-06, qui disait encore « ni pub ni achat » ; mission fr07).
   Une page statique : ni police, ni script, ni image venus d'ailleurs ; aucun traceur. Le petit script en bas choisit
-  la langue (?lang=xx, sinon #xx, sinon la langue du téléphone, sinon en) ; sans script, les 7 langues s'affichent.
+  la langue (?lang=xx, sinon #xx, sinon la langue du téléphone, sinon en) ; sans script, les 9 langues s'affichent.
+  Le lien « Politique de confidentialité » des réglages ouvre Balance.PrivacyUrl + "?lang=" + Loc.Lang
+  (Assets/Scripts/View/GameView.Consent.cs) : les codes du jeu sont en, fr, es, de, pt-BR, ja, ko, it, zh-TW.
 
-  CE QUE LA PAGE DÉCLARE, ET D'OÙ ÇA VIENT (dépôt Acorn Crew, branche perf04 / confidentialite) :
-  - Sauvegarde locale, sans compte ni serveur : Assets/Scripts/View/Saves.cs (save.txt, save.txt.bak, events.jsonl dans
-    Application.persistentDataPath, journal borné à Balance.JournalLines = 500) ; Assets/Scripts/Core/Save.cs (contenu,
-    ligne « consent <réponse> <jour> »). Aucun appel réseau dans Assets/Scripts hors du SDK Firebase.
-  - Firebase Analytics + Crashlytics, Android seulement, après « oui » seulement : docs/ANALYTICS.md §2-§4 et §7 ;
-    Assets/Scripts/Core/Measure.cs (la porte), Core/MeasurePlan.cs (les 8 événements, propriété « canal »),
-    Bootstrap/FirebaseSink.cs (compilé sous ACORN_FIREBASE && UNITY_ANDROID : rien sur iOS), Bootstrap/MeasureSinks.cs.
-  - Démarrage coupé, ni identifiant publicitaire ni Android ID, consent mode publicitaire refusé :
-    Assets/Plugins/Android/AcornMesure.androidlib/AndroidManifest.xml ; FirebaseSink.SetCollection.
-  - Rapports de plantage d'avant le « oui » et d'après le « non » effacés : FirebaseSink.ForgetUnsent
-    (FirebaseCrashlytics.deleteUnsentReports), docs/ANALYTICS.md §3.
-  - Où changer d'avis : accueil → roue dentée (GameView.Home.cs, « icon_settings ») → Réglages → ligne
-    « Statistiques : oui / non » (GameView.Consent.cs ConsentRow, clés consent_on / consent_off) → la carte
-    (consent_no / consent_yes). Libellés cités tels qu'ils sont dans Assets/Resources/i18n/*.json.
-  - Pas de pub, pas d'achat dans cette version : Packages/manifest.json (ni AdMob, ni UMP, ni Unity IAP),
-    Core/MeasurePlan.cs (« coins_buy … pas encore branché »). La page devra changer quand ils arriveront.
-  - Contact, éditeur, position sur les enfants : politique de Dev Idle (https://sleepwellapp.github.io/devidle-privacy/,
-    contact sylvain69740@gmail.com) et ~/AndroidPerso/DevTycoon/docs/APPSTORE.md (pas la catégorie Enfants).
+  CE QUE LE BUILD FAIT VRAIMENT (relevé le 2026-11-09, mission fr07) :
+  - Permissions du manifeste fusionné, `aapt2 dump permissions` de l'APK 671 (0.1.671, 9 nov.) et bundletool de l'AAB 555
+    (piste interne) : INTERNET, ACCESS_NETWORK_STATE, VIBRATE, com.android.vending.BILLING, WAKE_LOCK, FOREGROUND_SERVICE,
+    BIND_GET_INSTALL_REFERRER_SERVICE (APK), com.google.android.gms.permission.AD_ID, ACCESS_ADSERVICES_AD_ID,
+    ACCESS_ADSERVICES_ATTRIBUTION, ACCESS_ADSERVICES_TOPICS. AD_ID est gardée : la régie la lit, on le déclare.
+  - Defines Android : ACORN_ADMOB;ACORN_IAP;ACORN_FIREBASE (ProjectSettings/ProjectSettings.asset). Dépendances
+    (Assets/**/*Dependencies.xml) : play-services-ads 25.4.0, user-messaging-platform 4.0.0, firebase-analytics 24.0.0,
+    firebase-crashlytics-ndk 21.0.1 ; aucun adaptateur de médiation (AdMob seule régie). Unity IAP 5.4.3, Play Billing 9.
+  - Les pubs : docs/PUBS.md ; Core/Balance.cs (RewardedLifeFromLevel 20, RewardedLifeDailyCap 10, InterstitialFromLevel 35,
+    InterstitialEveryNLevels 3, InterstitialMinGapSeconds 180, FirstSessionAds 0, BannerEnabled false) ; Core/AdPolicy.cs.
+    La régie ne naît qu'au niveau 20, à l'accueil ou sur la carte (View/Pubs.cs : avant, ni SDK, ni formulaire, ni réseau).
+  - Le consentement des pubs : Ads/UmpConsentProvider.cs (UMP, TCF v2.2 ; formulaire publié dans la console AdMob, une
+    fois s'il est requis ; aucune requête avant CanRequestAds ; TagForUnderAgeOfConsent = false). Le rouvrir : Réglages,
+    ligne « Choix des pubs » (clé ads_privacy_row, View/GameView.Ads.cs), montrée quand Google la demande.
+  - « Sans pub » (remove_ads) : coupe les interstitiels, jamais les vidéos au choix (AdState.NoAds, docs/ACHATS.md).
+  - Les achats : docs/ACHATS.md (remove_ads, pass_<aaaa>_<mm>, lives_refill, coins_s/m/l), Iap/UnityIapStore.cs ;
+    Core/Shop.cs garde une empreinte FNV-1a du jeton de commande, jamais le jeton en clair ; View/Achats.cs envoie
+    coins_buy (paquet, pièces, niveau ; jamais le prix ni le reçu : Core/MeasurePlan.cs) après « oui » seulement.
+  - Sauvegarde locale, sans compte ni serveur : View/Saves.cs, Core/Save.cs ; allowBackup="true"
+    (Assets/Plugins/Android/AcornMesure.androidlib/AndroidManifest.xml).
+  - Firebase Analytics + Crashlytics, Android seulement, après « oui » seulement : docs/ANALYTICS.md §2-§4, §7, §8 ;
+    Core/Measure.cs, Core/MeasurePlan.cs, Bootstrap/FirebaseSink.cs. Ni identifiant publicitaire ni Android ID pour
+    Analytics, consent mode publicitaire toujours refusé (manifeste AcornMesure, FirebaseSink.SetConsent) : la carte des
+    stats et le formulaire de Google ne se lisent pas l'un l'autre (ANALYTICS §8).
+  - Où changer d'avis : accueil → roue dentée → Réglages → « Partager les stats : oui / non » (consent_row, switch_on/off)
+    → la carte (consent_no / consent_yes) ; « Choix des pubs » ; « Restaurer mes achats » (iap_restore_row). Libellés cités
+    tels qu'ils sont dans Assets/Resources/i18n/*.json, comme « Une petite vidéo (+1) » (lives_video) du panneau des vies.
+  - Le jeu n'est publié que sur Google Play (carte du board « …sur Google Play seul ») : pas de section iOS ; à réécrire
+    avant une version iOS (docs/privacy/README.md).
+  - Contact, éditeur : politique de Dev Idle (https://sleepwellapp.github.io/devidle-privacy/, sylvain69740@gmail.com).
 
-  CE QUE LES SDK COLLECTENT, PAGES OFFICIELLES DE GOOGLE (lues le 2026-11-06) :
-  - Privacy and Security in Firebase : https://firebase.google.com/support/privacy
-    (Crashlytics : UUID d'installation Crashlytics, Firebase installations ID, traces de plantage ; gardés 90 jours ;
-    Google agit en général comme sous-traitant / « data processor » ; traitement possible partout où Google a des sites).
-  - Firebase, divulgation Play : https://firebase.google.com/docs/android/play-data-disclosure
-    (Crashlytics : traces, état de l'appli, métadonnées de l'appareil au plantage, UUID d'installation, clés
-    personnalisées ; chiffré en transit par HTTPS ; pas de transfert à des tiers hors sous-traitants).
-  - Analytics, collecte automatique : https://support.google.com/firebase/answer/6318039
-    (identifiant d'instance d'appli ; sur Android l'identifiant publicitaire par défaut : coupé ici au manifeste).
-  - Analytics, événements automatiques : https://support.google.com/analytics/answer/9234069
-    (first_open, session_start, user_engagement, app_update, os_update, app_remove : Android seulement).
-  - Analytics, dimensions automatiques : https://support.google.com/analytics/answer/9268042
-    (version de l'appli, marque et modèle, langue, OS et version, pays / région déduits de l'IP ; âge, sexe et centres
-    d'intérêt passent par les signaux publicitaires : refusés ici).
-  - Analytics, conservation : https://support.google.com/analytics/answer/7667196
-    (2 ou 14 mois pour les données au niveau de l'utilisateur et des événements ; les rapports agrégés ne sont pas touchés).
-  - Analytics, adresses IP : https://support.google.com/analytics/answer/12017362
-    (UE, Suisse, Royaume-Uni : IP non journalisée ni gardée, servie seulement à déduire la zone puis jetée).
-  - Analytics, consentement : https://firebase.google.com/docs/analytics/configure-data-collection
-    (l'interrupteur de collecte persiste d'un lancement à l'autre ; un retrait de consentement efface les propriétés).
-  - AdMob et UMP : ABSENTS de cette version, donc NON déclarés. Pour le jour où ils arrivent (BRIEF : pubs à partir du
-    niveau 35) : https://developers.google.com/admob/android/privacy/play-data-disclosure (IP, interactions, diagnostics,
-    identifiant publicitaire, app set ID ; partagés ; TLS) et https://developers.google.com/admob/android/privacy (UMP).
+  PAGES OFFICIELLES DE GOOGLE (relues le 2026-11-09) :
+  - SDK Google Mobile Ads, divulgation Play : https://developers.google.com/admob/android/privacy/play-data-disclosure
+    (page de la 25.5.0, mise à jour le 2026-11-09 : collecte ET partage, pour la pub, l'analyse et la lutte contre la
+    fraude : adresse IP (position générale), interactions (lancement, taps, vidéos vues), diagnostics (temps de lancement,
+    blocages, énergie), identifiant publicitaire, app set ID ; chiffré en transit (TLS) ; l'identifiant publicitaire se
+    réinitialise ou se supprime dans les réglages d'Android).
+  - UMP / RGPD : https://developers.google.com/admob/android/privacy ; usage des données par Google :
+    https://policies.google.com/technologies/partner-sites ; conservation : https://policies.google.com/technologies/retention
+  - Firebase : https://firebase.google.com/support/privacy ; https://firebase.google.com/docs/android/play-data-disclosure
+  - Analytics, événements automatiques : https://support.google.com/analytics/answer/9234069 (dont in_app_purchase :
+    un achat intégré traité par Google Play est enregistré tout seul, avec produit, prix, devise et quantité ; ici après
+    « oui » seulement, puisque la collecte démarre coupée).
+  - Analytics, dimensions : https://support.google.com/analytics/answer/9268042 ; conservation :
+    https://support.google.com/analytics/answer/7667196 ; adresses IP : https://support.google.com/analytics/answer/12017362 ;
+    consentement : https://firebase.google.com/docs/analytics/configure-data-collection
 -->
 <html lang="en">
 <head>
@@ -53,14 +60,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<meta name="description" content="Acorn Crew privacy policy: no account, local save, statistics only with your consent.">
+<meta name="description" content="Acorn Crew privacy policy: no account, local save, ads by Google AdMob with Google's consent form, purchases through Google Play, statistics only with your consent.">
 <title>Acorn Crew — Privacy Policy · Politique de confidentialité</title>
 <style>
 :root{color-scheme:light dark;--bg:#fbf6ec;--fg:#3a2918;--mute:#7b6750;--accent:#8c4a12;--line:#e5d9c4;--chip:#fff}
 @media (prefers-color-scheme:dark){:root{--bg:#1c1712;--fg:#f0e7d8;--mute:#b5a58e;--accent:#f2a659;--line:#3e342a;--chip:#2a231c}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo","Noto Sans CJK JP","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo","Noto Sans CJK JP","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","PingFang TC","Microsoft JhengHei","Noto Sans CJK TC",sans-serif}
 header,main,footer{max-width:42rem;margin:0 auto;padding:0 1.1rem}
 header{padding-top:1.2rem}
 .brand{font-weight:700;font-size:1.05rem;color:var(--accent);margin:0 0 .6rem}
@@ -71,7 +78,8 @@ section{border-top:1px solid var(--line);margin-top:1.4rem;padding-top:.4rem}
 body:has(section:target) section:not(:target){display:none}
 body:has(#en:target) nav a[href="#en"],body:has(#fr:target) nav a[href="#fr"],body:has(#es:target) nav a[href="#es"],
 body:has(#de:target) nav a[href="#de"],body:has(#pt-BR:target) nav a[href="#pt-BR"],body:has(#ja:target) nav a[href="#ja"],
-body:has(#ko:target) nav a[href="#ko"]{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
+body:has(#ko:target) nav a[href="#ko"],body:has(#it:target) nav a[href="#it"],
+body:has(#zh-TW:target) nav a[href="#zh-TW"]{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
 h1{font-size:1.55rem;line-height:1.25;margin:.9rem 0 .2rem}
 h2{font-size:1.12rem;line-height:1.35;margin:1.6rem 0 .4rem}
 .date{color:var(--mute);margin:0 0 1rem;font-size:.95rem}
@@ -81,7 +89,7 @@ li{margin:.3rem 0}
 p{margin:.5rem 0}
 a{color:var(--accent);overflow-wrap:anywhere}
 code{font-size:.92em;overflow-wrap:anywhere}
-[lang="ja"],[lang="ko"]{line-height:1.75}
+[lang="ja"],[lang="ko"],[lang="zh-TW"]{line-height:1.75}
 [lang="ko"]{word-break:keep-all;overflow-wrap:anywhere}
 footer{color:var(--mute);font-size:.85rem;padding-top:2rem;padding-bottom:2.5rem}
 </style>
@@ -95,8 +103,10 @@ footer{color:var(--mute);font-size:.85rem;padding-top:2rem;padding-bottom:2.5rem
 <a href="#es" hreflang="es" lang="es">Español</a>
 <a href="#de" hreflang="de" lang="de">Deutsch</a>
 <a href="#pt-BR" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a>
+<a href="#it" hreflang="it" lang="it">Italiano</a>
 <a href="#ja" hreflang="ja" lang="ja">日本語</a>
 <a href="#ko" hreflang="ko" lang="ko">한국어</a>
+<a href="#zh-TW" hreflang="zh-TW" lang="zh-TW">繁體中文</a>
 </nav>
 </header>
 <main>
@@ -104,75 +114,100 @@ footer{color:var(--mute);font-size:.85rem;padding-top:2rem;padding-bottom:2.5rem
 <!-- ============================================================== ENGLISH -->
 <section id="en" lang="en">
 <h1>Acorn Crew — Privacy Policy</h1>
-<p class="date">Effective date: November 6, 2026</p>
-<p><strong>Acorn Crew</strong> (Android package <code>com.goodapps.acorncrew</code>) is a puzzle game published by GoodApps Studio (“we”). This page explains, in plain words, what the game keeps on your device, what it can send, and the choices you have.</p>
+<p class="date">Effective date: November 9, 2026</p>
+<p><strong>Acorn Crew</strong> (Android package <code>com.goodapps.acorncrew</code>) is a puzzle game published by GoodApps Studio (“we”). This page explains, in plain words, what the game keeps on your device, what it sends, to whom, and the choices you have.</p>
 
 <div class="short">
 <h2>In short</h2>
 <ul>
 <li><strong>No account</strong>, no sign-in. Your progress stays <strong>on your device</strong>.</li>
-<li>The current version has <strong>no ads and no in-app purchases</strong>.</li>
-<li>Gameplay statistics and crash reports are sent to Google Firebase <strong>only if you choose “Yes, happy to”</strong>. Nothing is sent before you answer, and nothing after “No thanks”.</li>
-<li>Never your name, email, contacts or advertising ID. No targeted ads. We never sell data.</li>
-<li>You can change your mind at any time in <strong>Settings</strong>.</li>
+<li>The game shows <strong>ads served by Google AdMob</strong>: videos you choose to watch (from level 20) and, from level 35, a full-screen ad between some levels. Google’s ad service receives your IP address, how you interact with ads, technical data and your device’s <strong>advertising ID</strong>. Where the law requires it (EU, UK, Switzerland…), <strong>Google’s consent form</strong> asks you first, and you can reopen it in Settings → <strong>“Ad choices”</strong>.</li>
+<li><strong>In-app purchases</strong> (such as “No ads”) are optional and processed by <strong>Google Play</strong>. We never see your payment details.</li>
+<li>Gameplay statistics and crash reports go to Google Firebase <strong>only if you choose “Yes, happy to”</strong>. They never include your advertising ID and are never used for ads.</li>
+<li>Never your name, email or contacts. We never sell data.</li>
 </ul>
 </div>
 
 <h2>1. What stays on your device</h2>
-<p>The game saves your progress in a file in the app’s private storage: level reached, coins, boosters, stars, village, albums, outfits, lives, sound, music and vibration settings, and your answer to the statistics question together with the date you gave it (the record of your choice). It also keeps a local log of the last few hundred game events (for example, a level won), used only on the device.</p>
-<p>We never receive this data: we have no game server. If your phone’s system backup (Google or Apple) is turned on, it may include a copy in your own account; we have no access to it.</p>
-<p>Uninstalling the game, or clearing its data, deletes all of it, including your progress.</p>
+<p>The game saves your progress in a file in the app’s private storage: level reached, coins, boosters, stars, village, albums, outfits, lives, sound, music and vibration settings, your answer to the statistics question with the date you gave it, the ad counters (when the last ad was shown, how many videos you watched today, whether you own “No ads”), and the purchases you own, each with a short fingerprint of its order (never the order itself, never any payment information) so that nothing is credited twice. It also keeps a local log of the last few hundred game events (for example, a level won), used only on the device.</p>
+<p>We never receive this file: we have no game server. If your phone’s system backup is turned on, it may include a copy in your own Google account; we have no access to it.</p>
+<p>Uninstalling the game, or clearing its data, deletes all of it. Purchases that last (“No ads”, the premium pass of the month) come back with <strong>“Restore purchases”</strong> in Settings.</p>
 
-<h2>2. What is sent if you say yes (Android)</h2>
+<h2>2. Ads</h2>
+<p><strong>Who serves them:</strong> Google AdMob (the Google Mobile Ads SDK), the only ad network in the game. There are no banners.</p>
+<ul>
+<li><strong>From level 20</strong>, in the “Your lives” panel, the button <strong>“Watch a video (+1)”</strong> gives you one life for a video. It is always your choice, at most 10 a day.</li>
+<li><strong>From level 35</strong>, a full-screen ad may appear when you move on after winning a level: at most one every 3 levels won and 3 minutes apart. Never after a lost level, never during your first session, never on event levels.</li>
+<li>Before you reach level 20, the ad service is not even started: no ad data leaves your device.</li>
+</ul>
+<p><strong>What Google’s ad service collects</strong> (Google’s own list for its SDK): your <strong>IP address</strong>, which may be used to estimate your general location; <strong>interactions</strong> such as app launch, taps and video views; <strong>diagnostics</strong> such as app launch time, hangs and energy use; and <strong>identifiers</strong>: your device’s <strong>advertising ID</strong> and app set ID. This data is encrypted in transit (TLS). Google uses it to show and measure ads and to prevent fraud, under its own privacy policy.</p>
+<p><strong>Google’s consent form:</strong> in the European Economic Area, the United Kingdom, Switzerland and other places where Google requires it, Google’s form opens once, the first time ads can appear (on the home screen or the map, never during a level). No ad is requested before you answer. You choose whether Google may personalise ads and use your data for the purposes it lists. If you refuse, Google may still show non-personalised or limited ads, which use less data (for example to count ads and prevent fraud).</p>
+<p><strong>Change your ad choices:</strong> Settings → <strong>“Ad choices”</strong> reopens Google’s form (the line appears where the form applies). On any Android phone, you can also reset or delete your advertising ID in the system settings (Privacy → Ads, or Google → Ads, depending on the phone).</p>
+<p><strong>“No ads”:</strong> this purchase removes the ads between levels for good. The videos you choose to watch stay available, so the ad service stays active for them.</p>
+<p>Ads and statistics are two separate choices: saying yes to statistics does not personalise ads, and accepting ads does not turn statistics on.</p>
+
+<h2>3. In-app purchases</h2>
+<p>Purchases are optional: “No ads”, the premium pass of the month, coin packs, full lives. Nothing needed to finish a level is sold. Payments are processed by <strong>Google Play</strong>, under Google’s terms: your card and payment details go to Google, <strong>never to us</strong>. The game only receives from Google Play which product was bought and an order token, to deliver it; it keeps on the device what you own and the fingerprint described in section 1. Refunds go through Google Play.</p>
+<p>If you said yes to statistics (section 4), the game also sends a “coins bought” event (which pack, how many coins, your level; never the price or the receipt), and Firebase automatically records that an in-app purchase was completed (product, price, currency, quantity), as Google documents. This is only used to understand the game, never for ads.</p>
+
+<h2>4. Statistics and crash reports, if you say yes (Android)</h2>
 <p>If you agree, the game uses two Google services: <strong>Google Analytics for Firebase</strong> and <strong>Firebase Crashlytics</strong>.</p>
 <ul>
-<li><strong>Game events:</strong> a level started, won, failed or quit (level number, attempt, duration, boosters used, acorns left, reason for the failure, main level or event level), a booster used, coins spent (on what, and how many), a game screen opened (map, village, albums, settings…).</li>
-<li><strong>Events recorded automatically by Firebase:</strong> first launch, start of a session, time spent in the app, app update, system update, uninstall.</li>
+<li><strong>Game events:</strong> a level started, won, failed or quit (level number, attempt, duration, boosters used, acorns left, reason for the failure, main level or event level), a booster used, coins spent (on what, and how many), coins bought (section 3), a game screen opened (map, village, albums, shop, settings…).</li>
+<li><strong>Events recorded automatically by Firebase:</strong> first launch, start of a session, time spent in the app, app update, system update, uninstall, in-app purchase completed.</li>
 <li><strong>Technical information:</strong> device brand and model, Android version, app version, language, and whether the game is the store version or a test version.</li>
-<li><strong>Identifiers:</strong> random identifiers created by the app when it is installed (Analytics app instance ID, Crashlytics installation ID, Firebase installation ID). They do not say who you are, and they change if you reinstall the game or clear its data.</li>
+<li><strong>Identifiers:</strong> random identifiers created by the app when it is installed (Analytics app instance ID, Crashlytics installation ID, Firebase installation ID). They do not say who you are, and they change if you reinstall the game or clear its data. Firebase does not read your advertising ID or Android ID.</li>
 <li><strong>Approximate location:</strong> country and region, estimated by Google from your IP address. For users in the EU, the UK and Switzerland, Google Analytics does not log or store the IP address.</li>
 <li><strong>Crash reports:</strong> the technical trace of the crash, technical information about the device and the app at that moment, and the level and screen you were on.</li>
 </ul>
-<p><strong>Never collected:</strong> your name, email address, phone number, contacts, photos or files, precise location, advertising ID, Android ID, payment details, or anything you type.</p>
+<p><strong>Never collected for statistics:</strong> your name, email address, phone number, contacts, photos or files, precise location, advertising ID, Android ID, payment details, or anything you type.</p>
 <p><strong>Why:</strong> to fix bugs and crashes, to tune how hard the levels are, and to see which parts of the game players enjoy. This data is not used for advertising or profiling, and it is never sold. <strong>Legal basis:</strong> your consent (Article 6(1)(a) GDPR).</p>
-<p><strong>On iOS:</strong> the current iOS version sends nothing, even after “Yes”. If that changes, this page will be updated first.</p>
 
-<h2>3. Before you answer, and after “No thanks”</h2>
+<h2>5. Before you answer, and after “No thanks”</h2>
 <ul>
-<li>The game starts with all collection switched off.</li>
-<li>Until you answer, nothing leaves your device. Events from the current session wait in memory only (never on disk) and are discarded unless you say yes during that session. A crash report recorded before your answer is deleted at the next launch, and will not be sent even if you say yes later.</li>
-<li>If you choose “No thanks” (on the question card, or later in Settings), all collection stops at once, crash reports still waiting on the device are deleted, and nothing more is kept.</li>
+<li>The game starts with all statistics switched off.</li>
+<li>Until you answer, no statistics leave your device. Events from the current session wait in memory only (never on disk) and are discarded unless you say yes during that session. A crash report recorded before your answer is deleted at the next launch, and will not be sent even if you say yes later.</li>
+<li>If you choose “No thanks” (on the question card, or later in Settings), statistics stop at once, crash reports still waiting on the device are deleted, and nothing more is kept.</li>
 <li>Closing the card without answering decides nothing; the game will ask again in a later session.</li>
+<li>This question is only about statistics. Ads have their own choices (section 2).</li>
 </ul>
 
-<h2>4. Change your mind at any time</h2>
-<p>On the home screen, tap the gear (<strong>Settings</strong>), then the line <strong>“Statistics: on”</strong> or <strong>“Statistics: off”</strong>. The question opens again: choose <strong>“No thanks”</strong> or <strong>“Yes, happy to”</strong>. Your new choice applies immediately, and nothing in the game changes either way.</p>
+<h2>6. Change your mind at any time</h2>
+<p>On the home screen, tap the gear (<strong>Settings</strong>):</p>
+<ul>
+<li><strong>Statistics:</strong> the line <strong>“Share stats: on”</strong> or <strong>“Share stats: off”</strong> opens the question again: choose <strong>“No thanks”</strong> or <strong>“Yes, happy to”</strong>. Your new choice applies immediately, and nothing in the game changes either way.</li>
+<li><strong>Ads:</strong> the line <strong>“Ad choices”</strong> reopens Google’s consent form (section 2).</li>
+<li><strong>Purchases:</strong> the line <strong>“Restore purchases”</strong> gets back what you bought.</li>
+</ul>
 
-<h2>5. How long data is kept</h2>
+<h2>7. How long data is kept</h2>
 <ul>
 <li><strong>Analytics:</strong> detailed event data is kept for 2 months, then deleted. Aggregated reports (totals such as “number of players who reached level 10”) contain no identifier and may be kept longer.</li>
 <li><strong>Crashlytics:</strong> crash reports and their identifiers are kept for 90 days.</li>
+<li><strong>Ads:</strong> Google keeps the data its ad service collects according to its own retention rules (link below).</li>
 </ul>
-<p>Saying no stops any new data; what was sent before follows these periods. Because this data contains no name or contact details, we usually cannot tell which data is yours. If you would like us to try to delete it, write to us (see Contact).</p>
+<p>Saying no stops any new statistics; what was sent before follows these periods. Because this data contains no name or contact details, we usually cannot tell which data is yours. If you would like us to try to delete it, write to us (see Contact).</p>
 
-<h2>6. Who processes the data, and where</h2>
-<p>Google processes this data on our behalf, as a service provider (“data processor”), under the Firebase terms and their data processing and security terms. Data is encrypted in transit (HTTPS) and may be processed in any country where Google has facilities, with the safeguards set out in those terms. We have switched off advertising signals: no advertising ID is collected, and the ad-related consent signals are always sent as refused. We do not share this data with anyone else.</p>
-<p>More: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Privacy and Security in Firebase</a> · <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Google Privacy Policy</a></p>
+<h2>8. Who processes the data, and where</h2>
+<p><strong>Statistics:</strong> Google processes them on our behalf, as a service provider (“data processor”), under the Firebase terms and their data processing and security terms. We have switched off advertising signals in Firebase: your statistics are never linked to ads.</p>
+<p><strong>Ads:</strong> Google receives the ad data described in section 2 and uses it for ads, measurement and fraud prevention under its own policies, including its EU user consent policy. <strong>Purchases:</strong> Google Play handles payments.</p>
+<p>Data is encrypted in transit and may be processed in any country where Google has facilities, with the safeguards set out in Google’s terms. We share no data with anyone other than these Google services, and we never sell it.</p>
+<p>More: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Privacy and Security in Firebase</a> · <a href="https://policies.google.com/technologies/partner-sites" rel="noopener noreferrer">How Google uses information from apps that use its services</a> · <a href="https://policies.google.com/technologies/retention" rel="noopener noreferrer">How Google retains data</a> · <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Google Privacy Policy</a></p>
 
-<h2>7. Ads and purchases</h2>
-<p>The current version has no ads and no in-app purchases. If we add them, this page will be updated before that version is released, and where the law requires it you will be asked for your consent again.</p>
+<h2>9. Permissions</h2>
+<p>The game asks Android for: internet and network status (ads, statistics, purchases); the advertising ID and Android’s ad services (attribution and topics), used by Google’s ad service; Google Play billing (purchases); vibration; and short background tasks used by Google’s libraries. It does not access your contacts, files, photos, location, microphone or camera.</p>
 
-<h2>8. Permissions</h2>
-<p>The game does not access your contacts, files, photos, location, microphone or camera.</p>
+<h2>10. Children</h2>
+<p>Acorn Crew is not designed for children under 13, and its ads are standard ads, not ads certified for children. We do not knowingly collect personal data from children; the game never asks for an age or a name. A parent can choose “No thanks” for statistics and, where Google’s form appears, refuse personalised ads. In some countries, a parent’s consent is needed to say yes below the age of 16 (or a lower age set by local law). If you believe a child’s data has been sent, write to us.</p>
 
-<h2>9. Children</h2>
-<p>Acorn Crew is not designed for children under 13, and we do not knowingly collect personal data from children. The game never asks for an age or a name. If a child plays, a parent can choose “No thanks” (or switch Statistics off in Settings): nothing is sent. In some countries, a parent’s consent is needed to say yes below the age of 16 (or a lower age set by local law). If you believe a child’s data has been sent, write to us.</p>
+<h2>11. Platforms</h2>
+<p>Acorn Crew is currently published on Android (Google Play) only. This page will be updated before any other version is released.</p>
 
-<h2>10. Your rights</h2>
-<p>Depending on where you live (for example under the GDPR in Europe), you can ask to access, correct or delete your data, or object to its use. You can withdraw your consent at any time in Settings (see section 4), without losing anything in the game. You can also complain to your data protection authority (in France, the CNIL).</p>
+<h2>12. Your rights</h2>
+<p>Depending on where you live (for example under the GDPR in Europe), you can ask to access, correct or delete your data, or object to its use. You can withdraw your consent at any time in Settings (see section 6), without losing anything in the game. You can also complain to your data protection authority (in France, the CNIL).</p>
 
-<h2>11. Changes</h2>
-<p>If this policy changes, we will update this page and the date at the top.</p>
+<h2>13. Changes</h2>
+<p>If this policy changes, we will update this page and the date at the top before the version concerned is released.</p>
 
 <h2>Contact</h2>
 <p>GoodApps Studio — <a href="mailto:sylvain69740@gmail.com">sylvain69740@gmail.com</a></p>
@@ -181,75 +216,100 @@ footer{color:var(--mute);font-size:.85rem;padding-top:2rem;padding-bottom:2.5rem
 <!-- ============================================================== FRANÇAIS -->
 <section id="fr" lang="fr">
 <h1>Acorn Crew — Politique de confidentialité</h1>
-<p class="date">Date d’effet : 6 novembre 2026</p>
-<p><strong>Acorn Crew</strong> (package Android <code>com.goodapps.acorncrew</code>) est un jeu de réflexion édité par GoodApps Studio (« nous »). Cette page explique simplement ce que le jeu garde sur votre appareil, ce qu’il peut envoyer, et ce que vous pouvez choisir.</p>
+<p class="date">Date d’effet : 9 novembre 2026</p>
+<p><strong>Acorn Crew</strong> (package Android <code>com.goodapps.acorncrew</code>) est un jeu de réflexion édité par GoodApps Studio (« nous »). Cette page explique simplement ce que le jeu garde sur votre appareil, ce qu’il envoie, à qui, et ce que vous pouvez choisir.</p>
 
 <div class="short">
 <h2>L’essentiel</h2>
 <ul>
 <li><strong>Aucun compte</strong>, aucune connexion. Votre progression reste <strong>sur votre appareil</strong>.</li>
-<li>La version actuelle n’a <strong>ni publicité, ni achat intégré</strong>.</li>
-<li>Les statistiques de jeu et les rapports de plantage partent vers Google Firebase <strong>seulement si vous choisissez « Oui, volontiers »</strong>. Rien ne part avant votre réponse, rien après « Non merci ».</li>
-<li>Jamais votre nom, votre e-mail, vos contacts ni votre identifiant publicitaire. Aucune pub ciblée. Nous ne vendons aucune donnée.</li>
-<li>Vous changez d’avis quand vous voulez dans les <strong>Réglages</strong>.</li>
+<li>Le jeu affiche des <strong>publicités servies par Google AdMob</strong> : des vidéos que vous choisissez de regarder (dès le niveau 20) et, dès le niveau 35, une pub plein écran entre certains niveaux. La régie de Google reçoit votre adresse IP, vos interactions avec les pubs, des données techniques et l’<strong>identifiant publicitaire</strong> de l’appareil. Là où la loi l’exige (UE, Royaume-Uni, Suisse…), le <strong>formulaire de consentement de Google</strong> vous demande d’abord votre accord, et vous le rouvrez dans les Réglages → <strong>« Choix des pubs »</strong>.</li>
+<li>Les <strong>achats intégrés</strong> (comme « Sans pub ») sont facultatifs et traités par <strong>Google Play</strong>. Nous ne voyons jamais vos données de paiement.</li>
+<li>Les statistiques de jeu et les rapports de plantage partent vers Google Firebase <strong>seulement si vous choisissez « Oui, volontiers »</strong>. Ils ne contiennent jamais votre identifiant publicitaire et ne servent jamais à la publicité.</li>
+<li>Jamais votre nom, votre e-mail ni vos contacts. Nous ne vendons aucune donnée.</li>
 </ul>
 </div>
 
 <h2>1. Ce qui reste sur votre appareil</h2>
-<p>Le jeu enregistre votre progression dans un fichier de l’espace privé de l’application : niveau atteint, pièces, boosters, étoiles, village, albums, garde-robe, vies, réglages du son, de la musique et de la vibration, et votre réponse à la question des statistiques avec le jour où vous l’avez donnée (la trace de votre choix). Il tient aussi un journal local des quelques centaines de derniers événements de jeu (par exemple un niveau gagné), qui ne sert que sur l’appareil.</p>
-<p>Ces données ne nous parviennent jamais : nous n’avons pas de serveur de jeu. Si la sauvegarde système de votre téléphone (Google ou Apple) est activée, elle peut en garder une copie dans votre propre compte ; nous n’y avons pas accès.</p>
-<p>Désinstaller le jeu, ou effacer ses données, supprime tout, y compris votre progression.</p>
+<p>Le jeu enregistre votre progression dans un fichier de l’espace privé de l’application : niveau atteint, pièces, boosters, étoiles, village, albums, garde-robe, vies, réglages du son, de la musique et de la vibration, votre réponse à la question des statistiques avec le jour où vous l’avez donnée, les compteurs des pubs (heure de la dernière pub, vidéos regardées aujourd’hui, achat « Sans pub » ou non), et les achats que vous possédez, chacun avec une courte empreinte de sa commande (jamais la commande elle-même, jamais une donnée de paiement), pour que rien ne soit crédité deux fois. Il tient aussi un journal local des quelques centaines de derniers événements de jeu (par exemple un niveau gagné), qui ne sert que sur l’appareil.</p>
+<p>Ce fichier ne nous parvient jamais : nous n’avons pas de serveur de jeu. Si la sauvegarde système de votre téléphone est activée, elle peut en garder une copie dans votre propre compte Google ; nous n’y avons pas accès.</p>
+<p>Désinstaller le jeu, ou effacer ses données, supprime tout. Les achats qui durent (« Sans pub », le pass premium du mois) reviennent avec <strong>« Restaurer mes achats »</strong> dans les Réglages.</p>
 
-<h2>2. Ce qui est envoyé si vous dites oui (Android)</h2>
-<p>Avec votre accord, le jeu utilise deux services de Google : <strong>Google Analytics pour Firebase</strong> et <strong>Firebase Crashlytics</strong>.</p>
+<h2>2. La publicité</h2>
+<p><strong>Qui la sert :</strong> Google AdMob (le SDK Google Mobile Ads), seule régie du jeu. Il n’y a pas de bannière.</p>
 <ul>
-<li><strong>Événements de jeu :</strong> un niveau commencé, gagné, perdu ou quitté (numéro du niveau, essai, durée, boosters utilisés, glands restants, cause de l’échec, niveau principal ou d’événement), un booster utilisé, des pièces dépensées (pour quoi, et combien), un écran du jeu ouvert (carte, village, albums, réglages…).</li>
-<li><strong>Événements enregistrés automatiquement par Firebase :</strong> premier lancement, début d’une session, temps passé dans l’application, mise à jour de l’application, mise à jour du système, désinstallation.</li>
-<li><strong>Informations techniques :</strong> marque et modèle de l’appareil, version d’Android, version de l’application, langue, et s’il s’agit de la version du store ou d’une version de test.</li>
-<li><strong>Identifiants :</strong> des identifiants aléatoires créés par l’application à l’installation (identifiant d’instance Analytics, identifiant d’installation Crashlytics, identifiant d’installation Firebase). Ils ne disent pas qui vous êtes, et changent si vous réinstallez le jeu ou effacez ses données.</li>
-<li><strong>Position approximative :</strong> pays et région, estimés par Google à partir de votre adresse IP. Pour les joueurs de l’Union européenne, du Royaume-Uni et de Suisse, Google Analytics n’enregistre ni ne conserve l’adresse IP.</li>
-<li><strong>Rapports de plantage :</strong> la trace technique du plantage, des informations techniques sur l’appareil et l’application à ce moment-là, et le niveau et l’écran où vous étiez.</li>
+<li><strong>Dès le niveau 20</strong>, dans le panneau « Tes vies », le bouton <strong>« Une petite vidéo (+1) »</strong> donne une vie contre une vidéo. C’est toujours votre choix, 10 fois par jour au plus.</li>
+<li><strong>Dès le niveau 35</strong>, une pub plein écran peut apparaître quand vous passez à la suite après un niveau gagné : une au plus tous les 3 niveaux gagnés, à 3 minutes d’écart au moins. Jamais après un niveau perdu, jamais pendant votre première séance, jamais sur un niveau d’événement.</li>
+<li>Avant le niveau 20, la régie n’est même pas lancée : aucune donnée publicitaire ne quitte l’appareil.</li>
 </ul>
-<p><strong>Jamais collectés :</strong> votre nom, votre adresse e-mail, votre numéro de téléphone, vos contacts, vos photos ou fichiers, votre position précise, l’identifiant publicitaire, l’Android ID, vos données de paiement, ni rien de ce que vous tapez.</p>
-<p><strong>Pourquoi :</strong> corriger les bugs et les plantages, régler la difficulté des niveaux, et voir ce que les joueurs aiment dans le jeu. Ces données ne servent ni à la publicité ni au profilage, et ne sont jamais vendues. <strong>Base légale :</strong> votre consentement (article 6.1.a du RGPD).</p>
-<p><strong>Sur iOS :</strong> la version iOS actuelle n’envoie rien, même après « Oui ». Si cela change, cette page sera mise à jour avant.</p>
+<p><strong>Ce que la régie de Google collecte</strong> (la liste de Google pour son SDK) : votre <strong>adresse IP</strong>, qui peut servir à estimer votre position générale ; des <strong>interactions</strong> comme le lancement de l’appli, les taps et les vidéos vues ; des <strong>diagnostics</strong> comme le temps de lancement, les blocages et la consommation d’énergie ; des <strong>identifiants</strong> : l’<strong>identifiant publicitaire</strong> de l’appareil et l’app set ID. Ces données sont chiffrées en transit (TLS). Google s’en sert pour afficher et mesurer les pubs et pour lutter contre la fraude, selon ses propres règles de confidentialité.</p>
+<p><strong>Le formulaire de consentement de Google :</strong> dans l’Espace économique européen, au Royaume-Uni, en Suisse et partout où Google l’exige, son formulaire s’ouvre une fois, la première fois qu’une pub peut apparaître (à l’accueil ou sur la carte, jamais pendant un niveau). Aucune pub n’est demandée avant votre réponse. Vous choisissez si Google peut personnaliser les pubs et utiliser vos données pour les finalités qu’il liste. Si vous refusez, Google peut encore afficher des pubs non personnalisées ou limitées, qui utilisent moins de données (par exemple pour compter les pubs et lutter contre la fraude).</p>
+<p><strong>Changer vos choix :</strong> Réglages → <strong>« Choix des pubs »</strong> rouvre le formulaire de Google (la ligne apparaît là où le formulaire s’applique). Sur tout téléphone Android, vous pouvez aussi réinitialiser ou supprimer votre identifiant publicitaire dans les paramètres du système (Confidentialité → Annonces, ou Google → Annonces, selon le téléphone).</p>
+<p><strong>« Sans pub » :</strong> cet achat retire pour de bon les pubs entre les niveaux. Les vidéos que vous choisissez de regarder restent proposées : la régie reste donc active pour elles.</p>
+<p>Pubs et statistiques sont deux choix séparés : dire oui aux statistiques ne personnalise pas les pubs, et accepter les pubs n’allume pas les statistiques.</p>
 
-<h2>3. Avant votre réponse, et après « Non merci »</h2>
+<h2>3. Les achats intégrés</h2>
+<p>Les achats sont facultatifs : « Sans pub », le pass premium du mois, des paquets de pièces, des vies pleines. Rien de ce qu’il faut pour finir un niveau n’est vendu. Les paiements sont traités par <strong>Google Play</strong>, selon les conditions de Google : votre carte et vos données de paiement vont à Google, <strong>jamais à nous</strong>. Le jeu reçoit seulement de Google Play le produit acheté et un jeton de commande, pour vous le livrer ; il garde sur l’appareil ce que vous possédez et l’empreinte décrite au §1. Les remboursements passent par Google Play.</p>
+<p>Si vous avez dit oui aux statistiques (§4), le jeu envoie aussi un événement « pièces achetées » (quel paquet, combien de pièces, votre niveau ; jamais le prix ni le reçu), et Firebase enregistre de lui-même qu’un achat intégré a abouti (produit, prix, devise, quantité), comme le documente Google. Cela ne sert qu’à comprendre le jeu, jamais à la publicité.</p>
+
+<h2>4. Statistiques et rapports de plantage, si vous dites oui (Android)</h2>
+<p>Si vous êtes d’accord, le jeu utilise deux services de Google : <strong>Google Analytics pour Firebase</strong> et <strong>Firebase Crashlytics</strong>.</p>
 <ul>
-<li>Le jeu démarre avec toute collecte coupée.</li>
-<li>Tant que vous n’avez pas répondu, rien ne quitte votre appareil. Les événements de la session attendent en mémoire seulement (jamais sur le disque) et disparaissent si vous ne dites pas oui pendant cette session. Un rapport de plantage enregistré avant votre réponse est effacé au lancement suivant, et ne sera pas envoyé même si vous dites oui plus tard.</li>
-<li>Si vous choisissez « Non merci » (sur la carte, ou plus tard dans les Réglages), toute collecte s’arrête aussitôt, les rapports de plantage encore en attente sur l’appareil sont effacés, et plus rien n’est gardé.</li>
-<li>Fermer la carte sans répondre ne décide rien ; le jeu reposera la question lors d’une prochaine session.</li>
+<li><strong>Événements de jeu :</strong> un niveau commencé, gagné, perdu ou quitté (numéro, essai, durée, boosters utilisés, glands restants, cause de l’échec, niveau principal ou d’événement), un booster utilisé, des pièces dépensées (pour quoi, et combien), des pièces achetées (§3), un écran ouvert (carte, village, albums, boutique, réglages…).</li>
+<li><strong>Événements enregistrés automatiquement par Firebase :</strong> premier lancement, début de session, temps passé dans l’appli, mise à jour de l’appli, mise à jour du système, désinstallation, achat intégré abouti.</li>
+<li><strong>Informations techniques :</strong> marque et modèle de l’appareil, version d’Android, version de l’appli, langue, et s’il s’agit de la version du store ou d’une version de test.</li>
+<li><strong>Identifiants :</strong> des identifiants aléatoires créés par l’appli à l’installation (identifiant d’instance d’Analytics, identifiant d’installation de Crashlytics, identifiant d’installation de Firebase). Ils ne disent pas qui vous êtes, et ils changent si vous réinstallez le jeu ou effacez ses données. Firebase ne lit ni votre identifiant publicitaire ni l’Android ID.</li>
+<li><strong>Position approximative :</strong> pays et région, estimés par Google à partir de votre adresse IP. Pour l’UE, le Royaume-Uni et la Suisse, Google Analytics ne journalise ni ne conserve l’adresse IP.</li>
+<li><strong>Rapports de plantage :</strong> la trace technique du plantage, des informations techniques sur l’appareil et l’appli à ce moment-là, et le niveau et l’écran où vous étiez.</li>
+</ul>
+<p><strong>Jamais collectés pour les statistiques :</strong> votre nom, votre adresse e-mail, votre numéro de téléphone, vos contacts, vos photos ou fichiers, votre position précise, votre identifiant publicitaire, l’Android ID, vos données de paiement, ni rien de ce que vous tapez.</p>
+<p><strong>Pourquoi :</strong> corriger les bugs et les plantages, régler la difficulté des niveaux, voir ce que les joueurs aiment. Ces données ne servent ni à la publicité ni au profilage, et ne sont jamais vendues. <strong>Base légale :</strong> votre consentement (article 6.1.a du RGPD).</p>
+
+<h2>5. Avant votre réponse, et après « Non merci »</h2>
+<ul>
+<li>Le jeu démarre avec toutes les statistiques coupées.</li>
+<li>Tant que vous n’avez pas répondu, aucune statistique ne quitte l’appareil. Les événements de la session en cours attendent en mémoire seulement (jamais sur le disque) et sont jetés si vous ne dites pas oui pendant cette session. Un rapport de plantage enregistré avant votre réponse est effacé au lancement suivant, et ne partira pas même si vous dites oui plus tard.</li>
+<li>Si vous choisissez « Non merci » (sur la carte de la question, ou plus tard dans les Réglages), les statistiques s’arrêtent aussitôt, les rapports de plantage encore en attente sur l’appareil sont effacés, et plus rien n’est gardé.</li>
+<li>Fermer la carte sans répondre ne décide rien ; le jeu reposera la question lors d’une session suivante.</li>
+<li>Cette question ne concerne que les statistiques. Les pubs ont leurs propres choix (§2).</li>
 </ul>
 
-<h2>4. Changer d’avis à tout moment</h2>
-<p>Sur l’accueil, touchez la roue dentée (<strong>Réglages</strong>), puis la ligne <strong>« Statistiques : oui »</strong> ou <strong>« Statistiques : non »</strong>. La question s’ouvre à nouveau : choisissez <strong>« Non merci »</strong> ou <strong>« Oui, volontiers »</strong>. Le nouveau choix s’applique tout de suite, et rien ne change dans le jeu, quel qu’il soit.</p>
-
-<h2>5. Durée de conservation</h2>
+<h2>6. Changer d’avis quand vous voulez</h2>
+<p>À l’accueil, touchez la roue dentée (<strong>Réglages</strong>) :</p>
 <ul>
-<li><strong>Analytics :</strong> les données détaillées des événements sont gardées 2 mois, puis supprimées. Les rapports agrégés (des totaux comme « nombre de joueurs arrivés au niveau 10 ») ne contiennent aucun identifiant et peuvent être gardés plus longtemps.</li>
+<li><strong>Statistiques :</strong> la ligne <strong>« Partager les stats : oui »</strong> ou <strong>« Partager les stats : non »</strong> rouvre la question : choisissez <strong>« Non merci »</strong> ou <strong>« Oui, volontiers »</strong>. Le nouveau choix vaut tout de suite, et rien ne change dans le jeu dans un cas comme dans l’autre.</li>
+<li><strong>Pubs :</strong> la ligne <strong>« Choix des pubs »</strong> rouvre le formulaire de consentement de Google (§2).</li>
+<li><strong>Achats :</strong> la ligne <strong>« Restaurer mes achats »</strong> rend ce que vous avez acheté.</li>
+</ul>
+
+<h2>7. Combien de temps les données sont gardées</h2>
+<ul>
+<li><strong>Analytics :</strong> les données détaillées des événements sont gardées 2 mois, puis effacées. Les rapports agrégés (des totaux comme « nombre de joueurs arrivés au niveau 10 ») ne contiennent aucun identifiant et peuvent être gardés plus longtemps.</li>
 <li><strong>Crashlytics :</strong> les rapports de plantage et leurs identifiants sont gardés 90 jours.</li>
+<li><strong>Pubs :</strong> Google garde les données de sa régie selon ses propres règles de conservation (lien plus bas).</li>
 </ul>
-<p>Dire non arrête tout nouvel envoi ; ce qui est parti avant suit ces durées. Comme ces données ne contiennent ni nom ni coordonnées, nous ne pouvons en général pas savoir lesquelles sont les vôtres. Si vous souhaitez que nous essayions de les supprimer, écrivez-nous (voir Contact).</p>
+<p>Dire non arrête toute nouvelle statistique ; ce qui est déjà parti suit ces durées. Ces données ne contenant ni nom ni coordonnées, nous ne savons en général pas lesquelles sont les vôtres. Si vous souhaitez que nous essayions de les effacer, écrivez-nous (voir Contact).</p>
 
-<h2>6. Qui traite les données, et où</h2>
-<p>Google traite ces données pour notre compte, en tant que sous-traitant, selon les conditions de Firebase et leurs conditions de traitement et de sécurité des données. Les données sont chiffrées pendant le transfert (HTTPS) et peuvent être traitées dans tout pays où Google dispose d’installations, avec les garanties prévues par ces conditions. Nous avons coupé les signaux publicitaires : aucun identifiant publicitaire n’est collecté, et les signaux de consentement liés à la publicité sont toujours envoyés comme refusés. Nous ne partageons ces données avec personne d’autre.</p>
-<p>Pour en savoir plus : <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Confidentialité et sécurité dans Firebase</a> · <a href="https://policies.google.com/privacy?hl=fr" rel="noopener noreferrer">Règles de confidentialité de Google</a></p>
+<h2>8. Qui traite les données, et où</h2>
+<p><strong>Statistiques :</strong> Google les traite pour notre compte, comme sous-traitant (« data processor »), selon les conditions de Firebase et ses conditions de traitement et de sécurité des données. Nous avons coupé les signaux publicitaires dans Firebase : vos statistiques ne sont jamais reliées aux pubs.</p>
+<p><strong>Pubs :</strong> Google reçoit les données décrites au §2 et s’en sert pour la publicité, la mesure et la lutte contre la fraude selon ses propres règles, dont sa politique de consentement des utilisateurs de l’UE. <strong>Achats :</strong> Google Play traite les paiements.</p>
+<p>Les données sont chiffrées en transit et peuvent être traitées dans tout pays où Google a des installations, avec les garanties prévues par les conditions de Google. Nous ne partageons aucune donnée avec personne d’autre que ces services de Google, et nous n’en vendons jamais.</p>
+<p>En savoir plus : <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Confidentialité et sécurité dans Firebase</a> · <a href="https://policies.google.com/technologies/partner-sites?hl=fr" rel="noopener noreferrer">Comment Google utilise les données des applis qui utilisent ses services</a> · <a href="https://policies.google.com/technologies/retention?hl=fr" rel="noopener noreferrer">Comment Google conserve les données</a> · <a href="https://policies.google.com/privacy?hl=fr" rel="noopener noreferrer">Règles de confidentialité de Google</a></p>
 
-<h2>7. Publicités et achats</h2>
-<p>La version actuelle n’a ni publicité ni achat intégré. Si nous en ajoutons, cette page sera mise à jour avant la sortie de cette version et, quand la loi le demande, votre accord vous sera demandé à nouveau.</p>
+<h2>9. Autorisations</h2>
+<p>Le jeu demande à Android : l’accès à internet et à l’état du réseau (pubs, statistiques, achats) ; l’identifiant publicitaire et les services publicitaires d’Android (attribution et thèmes), utilisés par la régie de Google ; la facturation Google Play (achats) ; la vibration ; et de courtes tâches de fond utilisées par les bibliothèques de Google. Il n’accède ni à vos contacts, ni à vos fichiers, ni à vos photos, ni à votre position, ni au micro, ni à l’appareil photo.</p>
 
-<h2>8. Autorisations</h2>
-<p>Le jeu n’accède ni à vos contacts, ni à vos fichiers, ni à vos photos, ni à votre position, ni à votre micro ou à votre appareil photo.</p>
+<h2>10. Enfants</h2>
+<p>Acorn Crew n’est pas conçu pour les enfants de moins de 13 ans, et ses pubs sont des pubs ordinaires, pas des pubs certifiées pour les enfants. Nous ne collectons pas sciemment de données personnelles d’enfants ; le jeu ne demande jamais d’âge ni de nom. Un parent peut choisir « Non merci » pour les statistiques et, là où le formulaire de Google apparaît, refuser les pubs personnalisées. Dans certains pays, l’accord d’un parent est nécessaire pour dire oui avant 16 ans (ou l’âge plus bas fixé par la loi locale). Si vous pensez que des données d’un enfant ont été envoyées, écrivez-nous.</p>
 
-<h2>9. Enfants</h2>
-<p>Acorn Crew n’est pas conçu pour les enfants de moins de 13 ans, et nous ne collectons sciemment aucune donnée personnelle d’enfant. Le jeu ne demande jamais d’âge ni de nom. Si un enfant joue, un parent peut choisir « Non merci » (ou mettre Statistiques sur non dans les Réglages) : rien n’est envoyé. Dans certains pays, l’accord d’un parent est nécessaire pour dire oui avant 16 ans (ou un âge plus bas fixé par la loi locale ; 15 ans en France). Si vous pensez que des données d’un enfant ont été envoyées, écrivez-nous.</p>
+<h2>11. Plateformes</h2>
+<p>Acorn Crew n’est publié aujourd’hui que sur Android (Google Play). Cette page sera mise à jour avant la sortie de toute autre version.</p>
 
-<h2>10. Vos droits</h2>
-<p>Selon l’endroit où vous vivez (par exemple avec le RGPD en Europe), vous pouvez demander l’accès à vos données, leur rectification ou leur effacement, ou vous opposer à leur utilisation. Vous pouvez retirer votre consentement à tout moment dans les Réglages (voir le point 4), sans rien perdre dans le jeu. Vous pouvez aussi adresser une réclamation à votre autorité de protection des données (en France, la CNIL).</p>
+<h2>12. Vos droits</h2>
+<p>Selon l’endroit où vous vivez (par exemple avec le RGPD en Europe), vous pouvez demander l’accès à vos données, leur rectification ou leur effacement, ou vous opposer à leur utilisation. Vous pouvez retirer votre consentement à tout moment dans les Réglages (voir §6), sans rien perdre dans le jeu. Vous pouvez aussi saisir votre autorité de protection des données (en France, la CNIL).</p>
 
-<h2>11. Modifications</h2>
-<p>Si cette politique change, nous mettons à jour cette page et la date en haut.</p>
+<h2>13. Modifications</h2>
+<p>Si cette politique change, nous mettrons à jour cette page et la date en haut avant la sortie de la version concernée.</p>
 
 <h2>Contact</h2>
 <p>GoodApps Studio — <a href="mailto:sylvain69740@gmail.com">sylvain69740@gmail.com</a></p>
@@ -258,75 +318,100 @@ footer{color:var(--mute);font-size:.85rem;padding-top:2rem;padding-bottom:2.5rem
 <!-- ============================================================== ESPAÑOL -->
 <section id="es" lang="es">
 <h1>Acorn Crew — Política de privacidad</h1>
-<p class="date">Fecha de entrada en vigor: 6 de noviembre de 2026</p>
-<p><strong>Acorn Crew</strong> (paquete de Android <code>com.goodapps.acorncrew</code>) es un juego de puzles publicado por GoodApps Studio («nosotros»). Esta página explica, con palabras sencillas, qué guarda el juego en tu dispositivo, qué puede enviar y qué puedes decidir tú.</p>
+<p class="date">Fecha de entrada en vigor: 9 de noviembre de 2026</p>
+<p><strong>Acorn Crew</strong> (paquete Android <code>com.goodapps.acorncrew</code>) es un juego de puzles publicado por GoodApps Studio («nosotros»). Esta página explica, con palabras sencillas, qué guarda el juego en tu dispositivo, qué envía, a quién, y qué puedes elegir.</p>
 
 <div class="short">
 <h2>En resumen</h2>
 <ul>
-<li><strong>Sin cuenta</strong> ni inicio de sesión. Tu progreso se queda <strong>en tu dispositivo</strong>.</li>
-<li>La versión actual <strong>no tiene anuncios ni compras dentro de la app</strong>.</li>
-<li>Las estadísticas de juego y los informes de fallos se envían a Google Firebase <strong>solo si eliges «Sí, claro»</strong>. No se envía nada antes de que respondas, ni después de «No, gracias».</li>
-<li>Nunca tu nombre, tu correo, tus contactos ni tu ID de publicidad. Sin anuncios personalizados. Nunca vendemos datos.</li>
-<li>Puedes cambiar de opinión cuando quieras en <strong>Ajustes</strong>.</li>
+<li><strong>Sin cuenta</strong>, sin inicio de sesión. Tu progreso se queda <strong>en tu dispositivo</strong>.</li>
+<li>El juego muestra <strong>anuncios servidos por Google AdMob</strong>: vídeos que eliges ver (desde el nivel 20) y, desde el nivel 35, un anuncio a pantalla completa entre algunos niveles. El servicio de anuncios de Google recibe tu dirección IP, tus interacciones con los anuncios, datos técnicos y el <strong>ID de publicidad</strong> del dispositivo. Donde la ley lo exige (UE, Reino Unido, Suiza…), el <strong>formulario de consentimiento de Google</strong> te pregunta primero, y puedes volver a abrirlo en Ajustes → <strong>«Opciones de anuncios»</strong>.</li>
+<li>Las <strong>compras integradas</strong> (como «Sin anuncios») son opcionales y las procesa <strong>Google Play</strong>. Nunca vemos tus datos de pago.</li>
+<li>Las estadísticas de juego y los informes de fallos se envían a Google Firebase <strong>solo si eliges «Sí, claro»</strong>. Nunca incluyen tu ID de publicidad y nunca se usan para anuncios.</li>
+<li>Nunca tu nombre, tu correo ni tus contactos. Nunca vendemos datos.</li>
 </ul>
 </div>
 
 <h2>1. Lo que se queda en tu dispositivo</h2>
-<p>El juego guarda tu progreso en un archivo del almacenamiento privado de la app: nivel alcanzado, monedas, potenciadores, estrellas, aldea, álbumes, armario, vidas, ajustes de sonido, música y vibración, y tu respuesta a la pregunta sobre las estadísticas junto con la fecha en que la diste (el registro de tu elección). También guarda un registro local de los últimos cientos de eventos de juego (por ejemplo, un nivel superado), que solo se usa en el dispositivo.</p>
-<p>Nunca recibimos estos datos: no tenemos servidor de juego. Si tienes activada la copia de seguridad del sistema (Google o Apple), puede incluir una copia en tu propia cuenta; nosotros no tenemos acceso a ella.</p>
-<p>Si desinstalas el juego o borras sus datos, se elimina todo, incluido tu progreso.</p>
+<p>El juego guarda tu progreso en un archivo del almacenamiento privado de la app: nivel alcanzado, monedas, potenciadores, estrellas, aldea, álbumes, vestuario, vidas, ajustes de sonido, música y vibración, tu respuesta a la pregunta de las estadísticas con la fecha en que la diste, los contadores de anuncios (cuándo se mostró el último, cuántos vídeos viste hoy, si tienes «Sin anuncios») y las compras que posees, cada una con una huella breve de su pedido (nunca el pedido en sí, nunca datos de pago), para que nada se acredite dos veces. También guarda un registro local de los últimos cientos de eventos de juego (por ejemplo, un nivel ganado), que solo se usa en el dispositivo.</p>
+<p>Nunca recibimos este archivo: no tenemos servidor de juego. Si la copia de seguridad del sistema de tu teléfono está activada, puede guardar una copia en tu propia cuenta de Google; no tenemos acceso a ella.</p>
+<p>Desinstalar el juego, o borrar sus datos, lo elimina todo. Las compras que duran («Sin anuncios», el pase prémium del mes) vuelven con <strong>«Restaurar compras»</strong> en Ajustes.</p>
 
-<h2>2. Lo que se envía si dices que sí (Android)</h2>
+<h2>2. Anuncios</h2>
+<p><strong>Quién los sirve:</strong> Google AdMob (el SDK de Google Mobile Ads), la única red publicitaria del juego. No hay banners.</p>
+<ul>
+<li><strong>Desde el nivel 20</strong>, en el panel «Tus vidas», el botón <strong>«Ver un vídeo (+1)»</strong> te da una vida a cambio de un vídeo. Siempre es tu elección, como máximo 10 al día.</li>
+<li><strong>Desde el nivel 35</strong>, puede aparecer un anuncio a pantalla completa al continuar tras ganar un nivel: como máximo uno cada 3 niveles ganados y con 3 minutos de separación. Nunca tras un nivel perdido, nunca en tu primera sesión, nunca en niveles de evento.</li>
+<li>Antes del nivel 20, el servicio de anuncios ni siquiera se inicia: ningún dato publicitario sale del dispositivo.</li>
+</ul>
+<p><strong>Lo que recoge el servicio de anuncios de Google</strong> (la lista de Google para su SDK): tu <strong>dirección IP</strong>, que puede usarse para estimar tu ubicación general; <strong>interacciones</strong> como el inicio de la app, los toques y los vídeos vistos; <strong>diagnósticos</strong> como el tiempo de inicio, los bloqueos y el consumo de energía; e <strong>identificadores</strong>: el <strong>ID de publicidad</strong> del dispositivo y el app set ID. Estos datos se cifran en tránsito (TLS). Google los usa para mostrar y medir anuncios y para prevenir el fraude, según su propia política de privacidad.</p>
+<p><strong>El formulario de consentimiento de Google:</strong> en el Espacio Económico Europeo, el Reino Unido, Suiza y otros lugares donde Google lo exige, su formulario se abre una vez, la primera vez que pueden aparecer anuncios (en la pantalla de inicio o en el mapa, nunca durante un nivel). No se pide ningún anuncio antes de tu respuesta. Tú eliges si Google puede personalizar los anuncios y usar tus datos para los fines que indica. Si te niegas, Google puede seguir mostrando anuncios no personalizados o limitados, que usan menos datos (por ejemplo, para contar anuncios y prevenir el fraude).</p>
+<p><strong>Cambiar tus opciones:</strong> Ajustes → <strong>«Opciones de anuncios»</strong> vuelve a abrir el formulario de Google (la línea aparece donde se aplica el formulario). En cualquier teléfono Android también puedes restablecer o eliminar tu ID de publicidad en los ajustes del sistema (Privacidad → Anuncios, o Google → Anuncios, según el teléfono).</p>
+<p><strong>«Sin anuncios»:</strong> esta compra quita para siempre los anuncios entre niveles. Los vídeos que eliges ver siguen disponibles, así que el servicio de anuncios sigue activo para ellos.</p>
+<p>Anuncios y estadísticas son dos elecciones separadas: aceptar las estadísticas no personaliza los anuncios, y aceptar los anuncios no activa las estadísticas.</p>
+
+<h2>3. Compras integradas</h2>
+<p>Las compras son opcionales: «Sin anuncios», el pase prémium del mes, paquetes de monedas, vidas llenas. No se vende nada necesario para terminar un nivel. Los pagos los procesa <strong>Google Play</strong>, según las condiciones de Google: tu tarjeta y tus datos de pago van a Google, <strong>nunca a nosotros</strong>. El juego solo recibe de Google Play qué producto se compró y un token del pedido, para entregártelo; guarda en el dispositivo lo que posees y la huella descrita en el apartado 1. Los reembolsos se gestionan en Google Play.</p>
+<p>Si aceptaste las estadísticas (apartado 4), el juego también envía un evento «monedas compradas» (qué paquete, cuántas monedas, tu nivel; nunca el precio ni el recibo), y Firebase registra automáticamente que se completó una compra integrada (producto, precio, moneda, cantidad), como documenta Google. Solo sirve para entender el juego, nunca para anuncios.</p>
+
+<h2>4. Estadísticas e informes de fallos, si dices que sí (Android)</h2>
 <p>Si aceptas, el juego usa dos servicios de Google: <strong>Google Analytics para Firebase</strong> y <strong>Firebase Crashlytics</strong>.</p>
 <ul>
-<li><strong>Eventos de juego:</strong> un nivel empezado, superado, fallido o abandonado (número de nivel, intento, duración, potenciadores usados, bellotas restantes, motivo del fallo, nivel principal o de evento), un potenciador usado, monedas gastadas (en qué y cuántas), una pantalla del juego abierta (mapa, aldea, álbumes, ajustes…).</li>
-<li><strong>Eventos que Firebase registra automáticamente:</strong> primer inicio, comienzo de cada sesión de uso, tiempo de uso de la app, actualización de la app, actualización del sistema, desinstalación.</li>
-<li><strong>Información técnica:</strong> marca y modelo del dispositivo, versión de Android, versión de la app, idioma, y si se trata de la versión de la tienda o de una versión de prueba.</li>
-<li><strong>Identificadores:</strong> identificadores aleatorios que la app crea al instalarse (ID de instancia de Analytics, ID de instalación de Crashlytics, ID de instalación de Firebase). No dicen quién eres y cambian si reinstalas el juego o borras sus datos.</li>
-<li><strong>Ubicación aproximada:</strong> país y región, que Google estima a partir de tu dirección IP. Para los usuarios de la Unión Europea, el Reino Unido y Suiza, Google Analytics no registra ni guarda la dirección IP.</li>
-<li><strong>Informes de fallos:</strong> el rastro técnico del fallo, información técnica del dispositivo y de la app en ese momento, y el nivel y la pantalla en los que estabas.</li>
+<li><strong>Eventos de juego:</strong> un nivel empezado, ganado, perdido o abandonado (número, intento, duración, potenciadores usados, bellotas restantes, causa del fallo, nivel principal o de evento), un potenciador usado, monedas gastadas (en qué y cuántas), monedas compradas (apartado 3), una pantalla abierta (mapa, aldea, álbumes, tienda, ajustes…).</li>
+<li><strong>Eventos que Firebase registra automáticamente:</strong> primer inicio, inicio de sesión, tiempo en la app, actualización de la app, actualización del sistema, desinstalación, compra integrada completada.</li>
+<li><strong>Información técnica:</strong> marca y modelo del dispositivo, versión de Android, versión de la app, idioma, y si es la versión de la tienda o una versión de prueba.</li>
+<li><strong>Identificadores:</strong> identificadores aleatorios creados por la app al instalarse (ID de instancia de Analytics, ID de instalación de Crashlytics, ID de instalación de Firebase). No dicen quién eres y cambian si reinstalas el juego o borras sus datos. Firebase no lee tu ID de publicidad ni el Android ID.</li>
+<li><strong>Ubicación aproximada:</strong> país y región, estimados por Google a partir de tu dirección IP. Para usuarios de la UE, el Reino Unido y Suiza, Google Analytics no registra ni guarda la dirección IP.</li>
+<li><strong>Informes de fallos:</strong> el rastro técnico del fallo, información técnica del dispositivo y de la app en ese momento, y el nivel y la pantalla en que estabas.</li>
 </ul>
-<p><strong>Nunca se recoge:</strong> tu nombre, tu correo electrónico, tu número de teléfono, tus contactos, tus fotos o archivos, tu ubicación exacta, el ID de publicidad, el Android ID, tus datos de pago ni nada de lo que escribas.</p>
-<p><strong>Para qué:</strong> para corregir errores y fallos, ajustar la dificultad de los niveles y saber qué partes del juego gustan más. Estos datos no se usan para publicidad ni para elaborar perfiles, y nunca se venden. <strong>Base jurídica:</strong> tu consentimiento (artículo 6.1.a del RGPD).</p>
-<p><strong>En iOS:</strong> la versión actual para iOS no envía nada, ni siquiera después de «Sí». Si eso cambia, actualizaremos antes esta página.</p>
+<p><strong>Nunca se recogen para las estadísticas:</strong> tu nombre, correo electrónico, número de teléfono, contactos, fotos o archivos, ubicación precisa, ID de publicidad, Android ID, datos de pago, ni nada de lo que escribes.</p>
+<p><strong>Para qué:</strong> corregir errores y fallos, ajustar la dificultad de los niveles y ver qué partes del juego gustan. Estos datos no se usan para publicidad ni para elaborar perfiles, y nunca se venden. <strong>Base legal:</strong> tu consentimiento (artículo 6.1.a del RGPD).</p>
 
-<h2>3. Antes de responder, y después de «No, gracias»</h2>
+<h2>5. Antes de responder, y después de «No, gracias»</h2>
 <ul>
-<li>El juego arranca con toda la recogida de datos desactivada.</li>
-<li>Mientras no respondas, nada sale de tu dispositivo. Los eventos de la sesión esperan solo en memoria (nunca en el almacenamiento) y se descartan si no dices que sí durante esa sesión. Un informe de fallo registrado antes de tu respuesta se borra en el siguiente inicio y no se enviará aunque digas que sí más adelante.</li>
-<li>Si eliges «No, gracias» (en la tarjeta de la pregunta o más tarde en Ajustes), toda la recogida se detiene al momento, los informes de fallos pendientes en el dispositivo se borran y ya no se guarda nada más.</li>
-<li>Cerrar la tarjeta sin responder no decide nada; el juego volverá a preguntarte en otra sesión.</li>
+<li>El juego empieza con todas las estadísticas desactivadas.</li>
+<li>Hasta que respondes, ninguna estadística sale del dispositivo. Los eventos de la sesión actual esperan solo en memoria (nunca en disco) y se descartan si no dices que sí durante esa sesión. Un informe de fallo registrado antes de tu respuesta se borra en el siguiente inicio y no se enviará aunque digas que sí después.</li>
+<li>Si eliges «No, gracias» (en la tarjeta de la pregunta, o más tarde en Ajustes), las estadísticas se detienen al instante, los informes de fallos pendientes en el dispositivo se borran y no se guarda nada más.</li>
+<li>Cerrar la tarjeta sin responder no decide nada; el juego volverá a preguntar en otra sesión.</li>
+<li>Esta pregunta solo trata de las estadísticas. Los anuncios tienen sus propias opciones (apartado 2).</li>
 </ul>
 
-<h2>4. Cambia de opinión cuando quieras</h2>
-<p>En la pantalla de inicio, toca el engranaje (<strong>Ajustes</strong>) y después la línea <strong>«Estadísticas: sí»</strong> o <strong>«Estadísticas: no»</strong>. La pregunta se abre de nuevo: elige <strong>«No, gracias»</strong> o <strong>«Sí, claro»</strong>. Tu nueva elección se aplica al instante, y el juego no cambia en nada elijas lo que elijas.</p>
-
-<h2>5. Cuánto tiempo se conservan los datos</h2>
+<h2>6. Cambia de opinión cuando quieras</h2>
+<p>En la pantalla de inicio, toca el engranaje (<strong>Ajustes</strong>):</p>
 <ul>
-<li><strong>Analytics:</strong> los datos detallados de eventos se conservan 2 meses y después se eliminan. Los informes agregados (totales como «número de jugadores que llegaron al nivel 10») no contienen ningún identificador y pueden conservarse más tiempo.</li>
-<li><strong>Crashlytics:</strong> los informes de fallos y sus identificadores se conservan 90 días.</li>
+<li><strong>Estadísticas:</strong> la línea <strong>«Enviar estadísticas: sí»</strong> o <strong>«Enviar estadísticas: no»</strong> vuelve a abrir la pregunta: elige <strong>«No, gracias»</strong> o <strong>«Sí, claro»</strong>. Tu nueva elección se aplica al momento y nada cambia en el juego en ningún caso.</li>
+<li><strong>Anuncios:</strong> la línea <strong>«Opciones de anuncios»</strong> vuelve a abrir el formulario de consentimiento de Google (apartado 2).</li>
+<li><strong>Compras:</strong> la línea <strong>«Restaurar compras»</strong> recupera lo que compraste.</li>
 </ul>
-<p>Decir que no detiene cualquier envío nuevo; lo enviado antes sigue estos plazos. Como estos datos no contienen ni nombre ni datos de contacto, normalmente no podemos saber cuáles son los tuyos. Si quieres que intentemos borrarlos, escríbenos (ver Contacto).</p>
 
-<h2>6. Quién trata los datos, y dónde</h2>
-<p>Google trata estos datos por cuenta nuestra, como encargado del tratamiento, según las condiciones de Firebase y sus condiciones de tratamiento y seguridad de datos. Los datos viajan cifrados (HTTPS) y pueden tratarse en cualquier país donde Google tenga instalaciones, con las garantías previstas en esas condiciones. Hemos desactivado las señales publicitarias: no se recoge ningún ID de publicidad y las señales de consentimiento relacionadas con anuncios se envían siempre como rechazadas. No compartimos estos datos con nadie más.</p>
-<p>Más información: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Privacidad y seguridad en Firebase</a> · <a href="https://policies.google.com/privacy?hl=es" rel="noopener noreferrer">Política de privacidad de Google</a></p>
+<h2>7. Cuánto tiempo se guardan los datos</h2>
+<ul>
+<li><strong>Analytics:</strong> los datos detallados de eventos se guardan 2 meses y luego se borran. Los informes agregados (totales como «número de jugadores que llegaron al nivel 10») no contienen ningún identificador y pueden guardarse más tiempo.</li>
+<li><strong>Crashlytics:</strong> los informes de fallos y sus identificadores se guardan 90 días.</li>
+<li><strong>Anuncios:</strong> Google guarda los datos que recoge su servicio de anuncios según sus propias reglas de conservación (enlace abajo).</li>
+</ul>
+<p>Decir que no detiene cualquier estadística nueva; lo enviado antes sigue estos plazos. Como estos datos no contienen nombre ni datos de contacto, normalmente no podemos saber cuáles son los tuyos. Si quieres que intentemos borrarlos, escríbenos (ver Contacto).</p>
 
-<h2>7. Anuncios y compras</h2>
-<p>La versión actual no tiene anuncios ni compras dentro de la app. Si los añadimos, actualizaremos esta página antes de publicar esa versión y, cuando la ley lo exija, volveremos a pedirte tu consentimiento.</p>
+<h2>8. Quién trata los datos, y dónde</h2>
+<p><strong>Estadísticas:</strong> Google las trata en nuestro nombre, como proveedor de servicios («encargado del tratamiento»), según las condiciones de Firebase y sus condiciones de tratamiento y seguridad de datos. Hemos desactivado las señales publicitarias en Firebase: tus estadísticas nunca se vinculan a los anuncios.</p>
+<p><strong>Anuncios:</strong> Google recibe los datos descritos en el apartado 2 y los usa para publicidad, medición y prevención del fraude según sus propias políticas, incluida su política de consentimiento de usuarios de la UE. <strong>Compras:</strong> Google Play gestiona los pagos.</p>
+<p>Los datos se cifran en tránsito y pueden tratarse en cualquier país donde Google tenga instalaciones, con las garantías previstas en las condiciones de Google. No compartimos datos con nadie más que estos servicios de Google, y nunca los vendemos.</p>
+<p>Más información: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Privacidad y seguridad en Firebase</a> · <a href="https://policies.google.com/technologies/partner-sites?hl=es" rel="noopener noreferrer">Cómo usa Google la información de las apps que usan sus servicios</a> · <a href="https://policies.google.com/technologies/retention?hl=es" rel="noopener noreferrer">Cómo conserva Google los datos</a> · <a href="https://policies.google.com/privacy?hl=es" rel="noopener noreferrer">Política de privacidad de Google</a></p>
 
-<h2>8. Permisos</h2>
-<p>El juego no accede a tus contactos, archivos, fotos, ubicación, micrófono ni cámara.</p>
+<h2>9. Permisos</h2>
+<p>El juego pide a Android: acceso a internet y al estado de la red (anuncios, estadísticas, compras); el ID de publicidad y los servicios de anuncios de Android (atribución y temas), usados por el servicio de anuncios de Google; la facturación de Google Play (compras); la vibración; y tareas breves en segundo plano usadas por las bibliotecas de Google. No accede a tus contactos, archivos, fotos, ubicación, micrófono ni cámara.</p>
 
-<h2>9. Menores</h2>
-<p>Acorn Crew no está pensado para menores de 13 años, y no recogemos a sabiendas datos personales de menores. El juego nunca pregunta la edad ni el nombre. Si juega un niño o una niña, su padre, madre o tutor puede elegir «No, gracias» (o poner Estadísticas en no en Ajustes): no se envía nada. En algunos países, por debajo de los 16 años (o de una edad menor fijada por la ley local; 14 en España) hace falta el consentimiento de los padres para decir que sí. Si crees que se han enviado datos de un menor, escríbenos.</p>
+<h2>10. Menores</h2>
+<p>Acorn Crew no está pensado para menores de 13 años, y sus anuncios son anuncios normales, no anuncios certificados para niños. No recogemos a sabiendas datos personales de menores; el juego nunca pide edad ni nombre. Un padre o una madre puede elegir «No, gracias» para las estadísticas y, donde aparece el formulario de Google, rechazar los anuncios personalizados. En algunos países se necesita el consentimiento de los padres para decir que sí antes de los 16 años (o la edad menor que fije la ley local). Si crees que se han enviado datos de un menor, escríbenos.</p>
 
-<h2>10. Tus derechos</h2>
-<p>Según dónde vivas (por ejemplo, con el RGPD en Europa), puedes pedir acceder a tus datos, rectificarlos o suprimirlos, u oponerte a su uso. Puedes retirar tu consentimiento en cualquier momento en Ajustes (ver el punto 4), sin perder nada en el juego. También puedes presentar una reclamación ante tu autoridad de protección de datos (en España, la AEPD).</p>
+<h2>11. Plataformas</h2>
+<p>Por ahora Acorn Crew solo está publicado en Android (Google Play). Esta página se actualizará antes de que salga cualquier otra versión.</p>
 
-<h2>11. Cambios</h2>
-<p>Si esta política cambia, actualizaremos esta página y la fecha de arriba.</p>
+<h2>12. Tus derechos</h2>
+<p>Según dónde vivas (por ejemplo, con el RGPD en Europa), puedes pedir acceder a tus datos, rectificarlos o borrarlos, u oponerte a su uso. Puedes retirar tu consentimiento en cualquier momento en Ajustes (ver apartado 6), sin perder nada en el juego. También puedes reclamar ante tu autoridad de protección de datos (en España, la AEPD).</p>
+
+<h2>13. Cambios</h2>
+<p>Si esta política cambia, actualizaremos esta página y la fecha de arriba antes de que salga la versión afectada.</p>
 
 <h2>Contacto</h2>
 <p>GoodApps Studio — <a href="mailto:sylvain69740@gmail.com">sylvain69740@gmail.com</a></p>
@@ -335,75 +420,100 @@ footer{color:var(--mute);font-size:.85rem;padding-top:2rem;padding-bottom:2.5rem
 <!-- ============================================================== DEUTSCH -->
 <section id="de" lang="de">
 <h1>Acorn Crew — Datenschutzerklärung</h1>
-<p class="date">Gültig ab: 6. November 2026</p>
-<p><strong>Acorn Crew</strong> (Android-Paket <code>com.goodapps.acorncrew</code>) ist ein Puzzlespiel von GoodApps Studio („wir“). Hier erklären wir in einfachen Worten, was das Spiel auf deinem Gerät speichert, was es senden kann und was du selbst entscheidest.</p>
+<p class="date">Gültig ab: 9. November 2026</p>
+<p><strong>Acorn Crew</strong> (Android-Paket <code>com.goodapps.acorncrew</code>) ist ein Puzzlespiel von GoodApps Studio („wir“). Diese Seite erklärt in einfachen Worten, was das Spiel auf deinem Gerät speichert, was es sendet, an wen, und welche Wahl du hast.</p>
 
 <div class="short">
-<h2>Das Wichtigste</h2>
+<h2>Kurz gesagt</h2>
 <ul>
 <li><strong>Kein Konto</strong>, keine Anmeldung. Dein Fortschritt bleibt <strong>auf deinem Gerät</strong>.</li>
-<li>Die aktuelle Version hat <strong>keine Werbung und keine In-App-Käufe</strong>.</li>
-<li>Spielstatistiken und Absturzberichte gehen <strong>nur dann an Google Firebase, wenn du „Ja, gerne“ wählst</strong>. Vor deiner Antwort wird nichts gesendet, nach „Nein, danke“ auch nicht.</li>
-<li>Nie dein Name, deine E-Mail-Adresse, deine Kontakte oder deine Werbe-ID. Keine personalisierte Werbung. Wir verkaufen keine Daten.</li>
-<li>Du kannst es dir jederzeit in den <strong>Einstellungen</strong> anders überlegen.</li>
+<li>Das Spiel zeigt <strong>Werbung von Google AdMob</strong>: Videos, die du freiwillig ansiehst (ab Level 20), und ab Level 35 eine Vollbildanzeige zwischen manchen Levels. Der Werbedienst von Google erhält deine IP-Adresse, deine Interaktionen mit der Werbung, technische Daten und die <strong>Werbe-ID</strong> des Geräts. Wo das Gesetz es verlangt (EU, Vereinigtes Königreich, Schweiz …), fragt dich zuerst das <strong>Einwilligungsformular von Google</strong>; du öffnest es wieder unter Einstellungen → <strong>„Werbe-Einstellungen“</strong>.</li>
+<li><strong>In-App-Käufe</strong> (etwa „Ohne Werbung“) sind freiwillig und werden von <strong>Google Play</strong> abgewickelt. Deine Zahlungsdaten sehen wir nie.</li>
+<li>Spielstatistiken und Absturzberichte gehen an Google Firebase, <strong>nur wenn du „Ja, gerne“ wählst</strong>. Sie enthalten nie deine Werbe-ID und dienen nie der Werbung.</li>
+<li>Nie dein Name, deine E-Mail oder deine Kontakte. Wir verkaufen keine Daten.</li>
 </ul>
 </div>
 
 <h2>1. Was auf deinem Gerät bleibt</h2>
-<p>Das Spiel speichert deinen Fortschritt in einer Datei im privaten Speicher der App: erreichtes Level, Münzen, Booster, Sterne, Dorf, Alben, Garderobe, Leben, Einstellungen für Ton, Musik und Vibration sowie deine Antwort auf die Statistik-Frage zusammen mit dem Tag, an dem du sie gegeben hast (der Nachweis deiner Entscheidung). Außerdem führt es ein lokales Protokoll der letzten paar hundert Spielereignisse (zum Beispiel ein gewonnenes Level), das nur auf dem Gerät verwendet wird.</p>
-<p>Diese Daten erreichen uns nie: Wir haben keinen Spielserver. Wenn die Systemsicherung deines Telefons (Google oder Apple) eingeschaltet ist, kann sie eine Kopie in deinem eigenen Konto ablegen; darauf haben wir keinen Zugriff.</p>
-<p>Wenn du das Spiel deinstallierst oder seine Daten löschst, wird alles entfernt, auch dein Fortschritt.</p>
+<p>Das Spiel speichert deinen Fortschritt in einer Datei im privaten Speicher der App: erreichtes Level, Münzen, Booster, Sterne, Dorf, Alben, Garderobe, Leben, Einstellungen für Ton, Musik und Vibration, deine Antwort auf die Statistikfrage mit dem Tag, an dem du sie gegeben hast, die Werbezähler (wann die letzte Anzeige lief, wie viele Videos du heute gesehen hast, ob du „Ohne Werbung“ besitzt) und deine Käufe, jeweils mit einem kurzen Fingerabdruck der Bestellung (nie die Bestellung selbst, nie Zahlungsdaten), damit nichts doppelt gutgeschrieben wird. Außerdem führt es ein lokales Protokoll der letzten paar hundert Spielereignisse (zum Beispiel ein gewonnenes Level), das nur auf dem Gerät genutzt wird.</p>
+<p>Diese Datei erreicht uns nie: Wir haben keinen Spielserver. Ist die Systemsicherung deines Telefons eingeschaltet, kann sie eine Kopie in deinem eigenen Google-Konto aufbewahren; darauf haben wir keinen Zugriff.</p>
+<p>Deinstallierst du das Spiel oder löschst seine Daten, ist alles weg. Dauerhafte Käufe („Ohne Werbung“, der Premium-Pass des Monats) holst du mit <strong>„Käufe wiederherstellen“</strong> in den Einstellungen zurück.</p>
 
-<h2>2. Was gesendet wird, wenn du zustimmst (Android)</h2>
-<p>Mit deiner Zustimmung nutzt das Spiel zwei Dienste von Google: <strong>Google Analytics für Firebase</strong> und <strong>Firebase Crashlytics</strong>.</p>
+<h2>2. Werbung</h2>
+<p><strong>Wer sie ausliefert:</strong> Google AdMob (das Google Mobile Ads SDK), das einzige Werbenetzwerk im Spiel. Es gibt keine Banner.</p>
 <ul>
-<li><strong>Spielereignisse:</strong> ein Level begonnen, gewonnen, verloren oder abgebrochen (Levelnummer, Versuch, Dauer, eingesetzte Booster, übrige Eicheln, Grund für das Scheitern, Haupt- oder Event-Level), ein eingesetzter Booster, ausgegebene Münzen (wofür und wie viele), ein geöffneter Spielbildschirm (Karte, Dorf, Alben, Einstellungen …).</li>
-<li><strong>Ereignisse, die Firebase automatisch erfasst:</strong> erster Start, Beginn einer Sitzung, Nutzungsdauer der App, App-Update, System-Update, Deinstallation.</li>
-<li><strong>Technische Angaben:</strong> Marke und Modell des Geräts, Android-Version, App-Version, Sprache und ob es sich um die Store-Version oder eine Testversion handelt.</li>
-<li><strong>Kennungen:</strong> zufällige Kennungen, die die App bei der Installation erzeugt (App-Instanz-ID von Analytics, Installations-ID von Crashlytics, Firebase-Installations-ID). Sie verraten nicht, wer du bist, und ändern sich, wenn du das Spiel neu installierst oder seine Daten löschst.</li>
-<li><strong>Ungefährer Standort:</strong> Land und Region, die Google aus deiner IP-Adresse ableitet. Bei Nutzern in der EU, im Vereinigten Königreich und in der Schweiz protokolliert und speichert Google Analytics die IP-Adresse nicht.</li>
+<li><strong>Ab Level 20</strong> gibt dir im Feld „Deine Leben“ die Schaltfläche <strong>„Video ansehen (+1)“</strong> ein Leben für ein Video. Das ist immer deine Wahl, höchstens 10 Mal am Tag.</li>
+<li><strong>Ab Level 35</strong> kann eine Vollbildanzeige erscheinen, wenn du nach einem gewonnenen Level weitermachst: höchstens eine alle 3 gewonnenen Level und mit 3 Minuten Abstand. Nie nach einem verlorenen Level, nie in deiner ersten Sitzung, nie bei Event-Levels.</li>
+<li>Vor Level 20 wird der Werbedienst gar nicht gestartet: Keine Werbedaten verlassen dein Gerät.</li>
+</ul>
+<p><strong>Was der Werbedienst von Google erhebt</strong> (Googles eigene Liste für sein SDK): deine <strong>IP-Adresse</strong>, mit der dein ungefährer Standort geschätzt werden kann; <strong>Interaktionen</strong> wie App-Start, Tippen und angesehene Videos; <strong>Diagnosedaten</strong> wie Startzeit, Hänger und Energieverbrauch; sowie <strong>Kennungen</strong>: die <strong>Werbe-ID</strong> des Geräts und die App-Set-ID. Diese Daten werden bei der Übertragung verschlüsselt (TLS). Google nutzt sie, um Werbung anzuzeigen und zu messen und um Betrug zu verhindern, nach seiner eigenen Datenschutzerklärung.</p>
+<p><strong>Das Einwilligungsformular von Google:</strong> Im Europäischen Wirtschaftsraum, im Vereinigten Königreich, in der Schweiz und überall, wo Google es verlangt, öffnet sich sein Formular einmal, wenn zum ersten Mal Werbung erscheinen kann (auf dem Startbildschirm oder der Karte, nie während eines Levels). Vor deiner Antwort wird keine Werbung angefordert. Du entscheidest, ob Google Werbung personalisieren und deine Daten für die genannten Zwecke nutzen darf. Lehnst du ab, kann Google trotzdem nicht personalisierte oder eingeschränkte Werbung zeigen, die weniger Daten nutzt (zum Beispiel zum Zählen von Anzeigen und gegen Betrug).</p>
+<p><strong>Deine Wahl ändern:</strong> Einstellungen → <strong>„Werbe-Einstellungen“</strong> öffnet das Formular von Google erneut (die Zeile erscheint dort, wo das Formular gilt). Auf jedem Android-Telefon kannst du deine Werbe-ID außerdem in den Systemeinstellungen zurücksetzen oder löschen (Datenschutz → Werbung oder Google → Werbung, je nach Telefon).</p>
+<p><strong>„Ohne Werbung“:</strong> Dieser Kauf entfernt die Werbung zwischen den Levels dauerhaft. Die Videos, die du freiwillig ansiehst, bleiben verfügbar; der Werbedienst bleibt dafür also aktiv.</p>
+<p>Werbung und Statistik sind zwei getrennte Entscheidungen: Ein Ja zur Statistik personalisiert keine Werbung, und ein Ja zur Werbung schaltet die Statistik nicht ein.</p>
+
+<h2>3. In-App-Käufe</h2>
+<p>Käufe sind freiwillig: „Ohne Werbung“, der Premium-Pass des Monats, Münzpakete, volle Leben. Nichts, was du zum Lösen eines Levels brauchst, wird verkauft. Zahlungen wickelt <strong>Google Play</strong> nach den Bedingungen von Google ab: Deine Karte und deine Zahlungsdaten gehen an Google, <strong>nie an uns</strong>. Das Spiel erhält von Google Play nur, welches Produkt gekauft wurde, und ein Bestell-Token, um es dir zu liefern; auf dem Gerät speichert es, was du besitzt, und den in Abschnitt 1 beschriebenen Fingerabdruck. Erstattungen laufen über Google Play.</p>
+<p>Hast du der Statistik zugestimmt (Abschnitt 4), sendet das Spiel auch ein Ereignis „Münzen gekauft“ (welches Paket, wie viele Münzen, dein Level; nie den Preis oder den Beleg), und Firebase erfasst automatisch, dass ein In-App-Kauf abgeschlossen wurde (Produkt, Preis, Währung, Menge), wie Google es beschreibt. Das dient nur dazu, das Spiel zu verstehen, nie der Werbung.</p>
+
+<h2>4. Statistiken und Absturzberichte, wenn du zustimmst (Android)</h2>
+<p>Wenn du zustimmst, nutzt das Spiel zwei Dienste von Google: <strong>Google Analytics für Firebase</strong> und <strong>Firebase Crashlytics</strong>.</p>
+<ul>
+<li><strong>Spielereignisse:</strong> ein Level begonnen, gewonnen, verloren oder abgebrochen (Nummer, Versuch, Dauer, genutzte Booster, übrige Eicheln, Grund des Scheiterns, Haupt- oder Event-Level), ein genutzter Booster, ausgegebene Münzen (wofür und wie viele), gekaufte Münzen (Abschnitt 3), ein geöffneter Bildschirm (Karte, Dorf, Alben, Shop, Einstellungen …).</li>
+<li><strong>Von Firebase automatisch erfasste Ereignisse:</strong> erster Start, Sitzungsbeginn, Nutzungsdauer, App-Update, System-Update, Deinstallation, abgeschlossener In-App-Kauf.</li>
+<li><strong>Technische Angaben:</strong> Marke und Modell des Geräts, Android-Version, App-Version, Sprache und ob es die Store-Version oder eine Testversion ist.</li>
+<li><strong>Kennungen:</strong> zufällige Kennungen, die die App bei der Installation erzeugt (Analytics-App-Instanz-ID, Crashlytics-Installations-ID, Firebase-Installations-ID). Sie sagen nicht, wer du bist, und ändern sich, wenn du das Spiel neu installierst oder seine Daten löschst. Firebase liest weder deine Werbe-ID noch die Android-ID.</li>
+<li><strong>Ungefährer Standort:</strong> Land und Region, von Google aus deiner IP-Adresse geschätzt. Für Nutzer in der EU, im Vereinigten Königreich und in der Schweiz protokolliert oder speichert Google Analytics die IP-Adresse nicht.</li>
 <li><strong>Absturzberichte:</strong> die technische Spur des Absturzes, technische Angaben zu Gerät und App in diesem Moment sowie das Level und der Bildschirm, auf dem du warst.</li>
 </ul>
-<p><strong>Nie erfasst:</strong> dein Name, deine E-Mail-Adresse, deine Telefonnummer, deine Kontakte, Fotos oder Dateien, dein genauer Standort, die Werbe-ID, die Android-ID, Zahlungsdaten oder irgendetwas, das du eintippst.</p>
-<p><strong>Wozu:</strong> um Fehler und Abstürze zu beheben, die Schwierigkeit der Level abzustimmen und zu sehen, welche Teile des Spiels gut ankommen. Die Daten werden weder für Werbung noch für Profilbildung genutzt und nie verkauft. <strong>Rechtsgrundlage:</strong> deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).</p>
-<p><strong>Unter iOS:</strong> Die aktuelle iOS-Version sendet nichts, auch nicht nach „Ja“. Sollte sich das ändern, passen wir diese Seite vorher an.</p>
+<p><strong>Nie für die Statistik erhoben:</strong> dein Name, deine E-Mail-Adresse, Telefonnummer, Kontakte, Fotos oder Dateien, genauer Standort, Werbe-ID, Android-ID, Zahlungsdaten oder irgendetwas, das du eintippst.</p>
+<p><strong>Wozu:</strong> um Fehler und Abstürze zu beheben, die Schwierigkeit der Level abzustimmen und zu sehen, welche Teile des Spiels gefallen. Diese Daten dienen weder der Werbung noch der Profilbildung und werden nie verkauft. <strong>Rechtsgrundlage:</strong> deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).</p>
 
-<h2>3. Vor deiner Antwort und nach „Nein, danke“</h2>
+<h2>5. Vor deiner Antwort und nach „Nein, danke“</h2>
 <ul>
-<li>Das Spiel startet mit vollständig ausgeschalteter Datenerfassung.</li>
-<li>Solange du nicht geantwortet hast, verlässt nichts dein Gerät. Die Ereignisse der Sitzung warten nur im Arbeitsspeicher (nie auf dem Speicher des Geräts) und verfallen, wenn du in dieser Sitzung nicht zustimmst. Ein Absturzbericht, der vor deiner Antwort entstanden ist, wird beim nächsten Start gelöscht und auch dann nicht gesendet, wenn du später zustimmst.</li>
-<li>Wählst du „Nein, danke“ (auf der Frage-Karte oder später in den Einstellungen), stoppt jede Erfassung sofort, noch wartende Absturzberichte auf dem Gerät werden gelöscht und nichts weiter wird aufbewahrt.</li>
-<li>Schließt du die Karte ohne Antwort, ist nichts entschieden; das Spiel fragt in einer späteren Sitzung noch einmal.</li>
+<li>Das Spiel startet mit ausgeschalteter Statistik.</li>
+<li>Bis du antwortest, verlässt keine Statistik dein Gerät. Ereignisse der laufenden Sitzung warten nur im Arbeitsspeicher (nie auf dem Speicher des Geräts) und werden verworfen, wenn du in dieser Sitzung nicht zustimmst. Ein vor deiner Antwort aufgezeichneter Absturzbericht wird beim nächsten Start gelöscht und auch dann nicht gesendet, wenn du später zustimmst.</li>
+<li>Wählst du „Nein, danke“ (auf der Fragekarte oder später in den Einstellungen), stoppt die Statistik sofort, noch wartende Absturzberichte auf dem Gerät werden gelöscht, und es wird nichts mehr gespeichert.</li>
+<li>Schließt du die Karte ohne Antwort, ist nichts entschieden; das Spiel fragt in einer späteren Sitzung erneut.</li>
+<li>Diese Frage betrifft nur die Statistik. Für Werbung gibt es eigene Einstellungen (Abschnitt 2).</li>
 </ul>
 
-<h2>4. Jederzeit umentscheiden</h2>
-<p>Tippe auf dem Startbildschirm auf das Zahnrad (<strong>Einstellungen</strong>) und dann auf die Zeile <strong>„Statistiken: an“</strong> oder <strong>„Statistiken: aus“</strong>. Die Frage öffnet sich erneut: Wähle <strong>„Nein, danke“</strong> oder <strong>„Ja, gerne“</strong>. Deine neue Wahl gilt sofort, und am Spiel ändert sich dadurch nichts.</p>
-
-<h2>5. Wie lange Daten gespeichert werden</h2>
+<h2>6. Jederzeit umentscheiden</h2>
+<p>Tippe auf dem Startbildschirm auf das Zahnrad (<strong>Einstellungen</strong>):</p>
 <ul>
-<li><strong>Analytics:</strong> Detaillierte Ereignisdaten werden 2 Monate gespeichert und dann gelöscht. Zusammengefasste Berichte (Summen wie „Anzahl der Spieler, die Level 10 erreicht haben“) enthalten keine Kennung und können länger aufbewahrt werden.</li>
+<li><strong>Statistik:</strong> Die Zeile <strong>„Statistik teilen: an“</strong> oder <strong>„Statistik teilen: aus“</strong> öffnet die Frage erneut: Wähle <strong>„Nein, danke“</strong> oder <strong>„Ja, gerne“</strong>. Deine neue Wahl gilt sofort, und im Spiel ändert sich in beiden Fällen nichts.</li>
+<li><strong>Werbung:</strong> Die Zeile <strong>„Werbe-Einstellungen“</strong> öffnet das Einwilligungsformular von Google erneut (Abschnitt 2).</li>
+<li><strong>Käufe:</strong> Die Zeile <strong>„Käufe wiederherstellen“</strong> holt zurück, was du gekauft hast.</li>
+</ul>
+
+<h2>7. Wie lange Daten gespeichert werden</h2>
+<ul>
+<li><strong>Analytics:</strong> Detaillierte Ereignisdaten werden 2 Monate gespeichert und dann gelöscht. Zusammengefasste Berichte (Summen wie „Zahl der Spieler, die Level 10 erreicht haben“) enthalten keine Kennung und können länger aufbewahrt werden.</li>
 <li><strong>Crashlytics:</strong> Absturzberichte und ihre Kennungen werden 90 Tage gespeichert.</li>
+<li><strong>Werbung:</strong> Google bewahrt die Daten seines Werbedienstes nach eigenen Aufbewahrungsregeln auf (Link unten).</li>
 </ul>
-<p>Ein Nein stoppt jede neue Übertragung; was vorher gesendet wurde, folgt diesen Fristen. Da diese Daten weder Namen noch Kontaktdaten enthalten, können wir in der Regel nicht erkennen, welche davon deine sind. Wenn wir versuchen sollen, sie zu löschen, schreib uns (siehe Kontakt).</p>
+<p>Ein Nein stoppt jede neue Statistik; bereits Gesendetes folgt diesen Fristen. Da diese Daten weder Namen noch Kontaktdaten enthalten, können wir meist nicht erkennen, welche deine sind. Möchtest du, dass wir versuchen, sie zu löschen, schreib uns (siehe Kontakt).</p>
 
-<h2>6. Wer die Daten verarbeitet, und wo</h2>
-<p>Google verarbeitet diese Daten in unserem Auftrag als Auftragsverarbeiter, auf Grundlage der Firebase-Nutzungsbedingungen und der zugehörigen Bedingungen zur Datenverarbeitung und Datensicherheit. Die Daten werden verschlüsselt übertragen (HTTPS) und können in jedem Land verarbeitet werden, in dem Google Einrichtungen betreibt, mit den in diesen Bedingungen vorgesehenen Garantien. Werbesignale haben wir abgeschaltet: Es wird keine Werbe-ID erfasst, und die werbebezogenen Einwilligungssignale werden immer als abgelehnt übermittelt. Wir geben diese Daten an niemanden sonst weiter.</p>
-<p>Mehr dazu: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Datenschutz und Sicherheit in Firebase</a> · <a href="https://policies.google.com/privacy?hl=de" rel="noopener noreferrer">Datenschutzerklärung von Google</a></p>
+<h2>8. Wer die Daten verarbeitet, und wo</h2>
+<p><strong>Statistik:</strong> Google verarbeitet sie in unserem Auftrag als Dienstleister („Auftragsverarbeiter“) nach den Firebase-Bedingungen und deren Bedingungen zur Datenverarbeitung und -sicherheit. Wir haben die Werbesignale in Firebase abgeschaltet: Deine Statistik wird nie mit Werbung verknüpft.</p>
+<p><strong>Werbung:</strong> Google erhält die in Abschnitt 2 beschriebenen Daten und nutzt sie für Werbung, Messung und Betrugsprävention nach seinen eigenen Richtlinien, einschließlich seiner Richtlinie zur Einwilligung von Nutzern in der EU. <strong>Käufe:</strong> Google Play wickelt die Zahlungen ab.</p>
+<p>Die Daten werden bei der Übertragung verschlüsselt und können in jedem Land verarbeitet werden, in dem Google Einrichtungen hat, mit den in den Bedingungen von Google vorgesehenen Garantien. Wir geben keine Daten an andere als diese Google-Dienste weiter und verkaufen sie nie.</p>
+<p>Mehr: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Datenschutz und Sicherheit in Firebase</a> · <a href="https://policies.google.com/technologies/partner-sites?hl=de" rel="noopener noreferrer">Wie Google Daten aus Apps nutzt, die seine Dienste verwenden</a> · <a href="https://policies.google.com/technologies/retention?hl=de" rel="noopener noreferrer">Wie Google Daten aufbewahrt</a> · <a href="https://policies.google.com/privacy?hl=de" rel="noopener noreferrer">Datenschutzerklärung von Google</a></p>
 
-<h2>7. Werbung und Käufe</h2>
-<p>Die aktuelle Version hat weder Werbung noch In-App-Käufe. Falls wir sie einführen, passen wir diese Seite vor dem Erscheinen dieser Version an und bitten dich, wo das Gesetz es verlangt, erneut um deine Einwilligung.</p>
+<h2>9. Berechtigungen</h2>
+<p>Das Spiel fragt Android nach: Internet und Netzwerkstatus (Werbung, Statistik, Käufe); der Werbe-ID und den Werbediensten von Android (Attribution und Themen), genutzt vom Werbedienst von Google; Google-Play-Abrechnung (Käufe); Vibration; und kurzen Hintergrundaufgaben der Bibliotheken von Google. Es greift nicht auf deine Kontakte, Dateien, Fotos, deinen Standort, dein Mikrofon oder deine Kamera zu.</p>
 
-<h2>8. Berechtigungen</h2>
-<p>Das Spiel greift nicht auf deine Kontakte, Dateien, Fotos, deinen Standort, dein Mikrofon oder deine Kamera zu.</p>
+<h2>10. Kinder</h2>
+<p>Acorn Crew ist nicht für Kinder unter 13 Jahren gedacht, und seine Werbung ist gewöhnliche Werbung, nicht für Kinder zertifiziert. Wir erheben wissentlich keine personenbezogenen Daten von Kindern; das Spiel fragt nie nach Alter oder Namen. Ein Elternteil kann bei der Statistik „Nein, danke“ wählen und, wo das Formular von Google erscheint, personalisierte Werbung ablehnen. In manchen Ländern ist unter 16 Jahren (oder einem niedrigeren gesetzlichen Alter) die Zustimmung eines Elternteils nötig, um Ja zu sagen. Wenn du glaubst, dass Daten eines Kindes gesendet wurden, schreib uns.</p>
 
-<h2>9. Kinder</h2>
-<p>Acorn Crew ist nicht für Kinder unter 13 Jahren gedacht, und wir erheben wissentlich keine personenbezogenen Daten von Kindern. Das Spiel fragt nie nach Alter oder Namen. Spielt ein Kind, kann ein Elternteil „Nein, danke“ wählen (oder Statistiken in den Einstellungen ausschalten): Dann wird nichts gesendet. In manchen Ländern braucht es unter 16 Jahren (oder einem niedrigeren, gesetzlich festgelegten Alter) die Zustimmung der Eltern, um Ja zu sagen. Wenn du glaubst, dass Daten eines Kindes gesendet wurden, schreib uns.</p>
+<h2>11. Plattformen</h2>
+<p>Acorn Crew ist derzeit nur für Android (Google Play) veröffentlicht. Diese Seite wird aktualisiert, bevor eine andere Version erscheint.</p>
 
-<h2>10. Deine Rechte</h2>
-<p>Je nachdem, wo du lebst (zum Beispiel nach der DSGVO in Europa), kannst du Auskunft über deine Daten, ihre Berichtigung oder Löschung verlangen oder ihrer Nutzung widersprechen. Deine Einwilligung kannst du jederzeit in den Einstellungen widerrufen (siehe Punkt 4), ohne im Spiel etwas zu verlieren. Außerdem kannst du dich bei deiner Datenschutzaufsichtsbehörde beschweren.</p>
+<h2>12. Deine Rechte</h2>
+<p>Je nach Wohnort (zum Beispiel nach der DSGVO in Europa) kannst du Auskunft, Berichtigung oder Löschung deiner Daten verlangen oder ihrer Nutzung widersprechen. Du kannst deine Einwilligung jederzeit in den Einstellungen widerrufen (siehe Abschnitt 6), ohne im Spiel etwas zu verlieren. Du kannst dich auch bei deiner Datenschutzbehörde beschweren.</p>
 
-<h2>11. Änderungen</h2>
-<p>Ändert sich diese Erklärung, aktualisieren wir diese Seite und das Datum oben.</p>
+<h2>13. Änderungen</h2>
+<p>Ändert sich diese Erklärung, aktualisieren wir diese Seite und das Datum oben, bevor die betroffene Version erscheint.</p>
 
 <h2>Kontakt</h2>
 <p>GoodApps Studio — <a href="mailto:sylvain69740@gmail.com">sylvain69740@gmail.com</a></p>
@@ -411,153 +521,305 @@ footer{color:var(--mute);font-size:.85rem;padding-top:2rem;padding-bottom:2.5rem
 
 <!-- ============================================================== PORTUGUÊS (BRASIL) -->
 <section id="pt-BR" lang="pt-BR">
-<h1>Acorn Crew — Política de Privacidade</h1>
-<p class="date">Em vigor a partir de 6 de novembro de 2026</p>
-<p><strong>Acorn Crew</strong> (pacote Android <code>com.goodapps.acorncrew</code>) é um jogo de quebra-cabeça publicado pela GoodApps Studio (“nós”). Esta página explica, de um jeito simples, o que o jogo guarda no seu aparelho, o que ele pode enviar e o que você pode escolher.</p>
+<h1>Acorn Crew — Política de privacidade</h1>
+<p class="date">Data de vigência: 9 de novembro de 2026</p>
+<p><strong>Acorn Crew</strong> (pacote Android <code>com.goodapps.acorncrew</code>) é um jogo de quebra-cabeça publicado pela GoodApps Studio (“nós”). Esta página explica, em palavras simples, o que o jogo guarda no seu dispositivo, o que envia, para quem, e quais escolhas você tem.</p>
 
 <div class="short">
-<h2>Resumindo</h2>
+<h2>Em resumo</h2>
 <ul>
-<li><strong>Sem conta</strong> e sem login. Seu progresso fica <strong>no seu aparelho</strong>.</li>
-<li>A versão atual <strong>não tem anúncios nem compras no app</strong>.</li>
-<li>Estatísticas de jogo e relatórios de falhas só vão para o Google Firebase <strong>se você escolher “Sim, claro”</strong>. Nada é enviado antes da sua resposta, e nada depois de “Não, obrigado”.</li>
-<li>Nunca o seu nome, e-mail, contatos ou ID de publicidade. Nada de anúncios personalizados. Nunca vendemos dados.</li>
-<li>Você pode mudar de ideia quando quiser em <strong>Configurações</strong>.</li>
+<li><strong>Sem conta</strong>, sem login. Seu progresso fica <strong>no seu dispositivo</strong>.</li>
+<li>O jogo mostra <strong>anúncios exibidos pelo Google AdMob</strong>: vídeos que você escolhe assistir (a partir do nível 20) e, a partir do nível 35, um anúncio em tela cheia entre alguns níveis. O serviço de anúncios do Google recebe seu endereço IP, suas interações com os anúncios, dados técnicos e o <strong>ID de publicidade</strong> do aparelho. Onde a lei exige (UE, Reino Unido, Suíça…), o <strong>formulário de consentimento do Google</strong> pergunta primeiro, e você pode reabri-lo em Configurações → <strong>“Escolhas de anúncios”</strong>.</li>
+<li>As <strong>compras no app</strong> (como “Sem anúncios”) são opcionais e processadas pelo <strong>Google Play</strong>. Nunca vemos seus dados de pagamento.</li>
+<li>Estatísticas de jogo e relatórios de falhas vão para o Google Firebase <strong>somente se você escolher “Sim, claro”</strong>. Eles nunca incluem seu ID de publicidade e nunca são usados para anúncios.</li>
+<li>Nunca seu nome, e-mail ou contatos. Nunca vendemos dados.</li>
 </ul>
 </div>
 
-<h2>1. O que fica no seu aparelho</h2>
-<p>O jogo salva seu progresso em um arquivo no armazenamento privado do app: nível alcançado, moedas, reforços, estrelas, vila, álbuns, guarda-roupa, vidas, configurações de som, música e vibração, e a sua resposta à pergunta sobre estatísticas, junto com a data em que você respondeu (o registro da sua escolha). Ele também mantém um registro local das últimas centenas de eventos do jogo (por exemplo, um nível vencido), usado só no aparelho.</p>
-<p>Esses dados nunca chegam até nós: não temos servidor de jogo. Se o backup do sistema do seu celular (Google ou Apple) estiver ativado, ele pode guardar uma cópia na sua própria conta; nós não temos acesso a ela.</p>
-<p>Ao desinstalar o jogo ou apagar os dados dele, tudo é excluído, inclusive o seu progresso.</p>
+<h2>1. O que fica no seu dispositivo</h2>
+<p>O jogo salva seu progresso em um arquivo no armazenamento privado do app: nível alcançado, moedas, boosters, estrelas, vila, álbuns, guarda-roupa, vidas, configurações de som, música e vibração, sua resposta à pergunta das estatísticas com a data em que você respondeu, os contadores de anúncios (quando foi o último, quantos vídeos você viu hoje, se você tem “Sem anúncios”) e as compras que você possui, cada uma com uma impressão digital curta do pedido (nunca o pedido em si, nunca dados de pagamento), para que nada seja creditado duas vezes. Ele também mantém um registro local das últimas centenas de eventos do jogo (por exemplo, um nível vencido), usado só no dispositivo.</p>
+<p>Nunca recebemos esse arquivo: não temos servidor de jogo. Se o backup do sistema do seu celular estiver ativado, ele pode guardar uma cópia na sua própria conta Google; não temos acesso a ela.</p>
+<p>Desinstalar o jogo, ou limpar os dados dele, apaga tudo. As compras que duram (“Sem anúncios”, o passe premium do mês) voltam com <strong>“Restaurar compras”</strong> nas Configurações.</p>
 
-<h2>2. O que é enviado se você disser sim (Android)</h2>
-<p>Com a sua permissão, o jogo usa dois serviços do Google: <strong>Google Analytics para Firebase</strong> e <strong>Firebase Crashlytics</strong>.</p>
+<h2>2. Anúncios</h2>
+<p><strong>Quem os exibe:</strong> o Google AdMob (o SDK Google Mobile Ads), a única rede de anúncios do jogo. Não há banners.</p>
 <ul>
-<li><strong>Eventos do jogo:</strong> um nível iniciado, vencido, perdido ou abandonado (número do nível, tentativa, duração, reforços usados, bolotas restantes, motivo da derrota, nível principal ou de evento), um reforço usado, moedas gastas (em quê e quantas), uma tela do jogo aberta (mapa, vila, álbuns, configurações…).</li>
-<li><strong>Eventos registrados automaticamente pelo Firebase:</strong> primeira abertura, início de cada sessão de uso, tempo de uso do app, atualização do app, atualização do sistema, desinstalação.</li>
+<li><strong>A partir do nível 20</strong>, no painel “Suas vidas”, o botão <strong>“Ver um vídeo (+1)”</strong> dá uma vida em troca de um vídeo. É sempre escolha sua, no máximo 10 por dia.</li>
+<li><strong>A partir do nível 35</strong>, um anúncio em tela cheia pode aparecer quando você segue em frente depois de vencer um nível: no máximo um a cada 3 níveis vencidos e com 3 minutos de intervalo. Nunca depois de um nível perdido, nunca na sua primeira sessão, nunca em níveis de evento.</li>
+<li>Antes do nível 20, o serviço de anúncios nem é iniciado: nenhum dado de anúncio sai do seu dispositivo.</li>
+</ul>
+<p><strong>O que o serviço de anúncios do Google coleta</strong> (a lista do próprio Google para o SDK): seu <strong>endereço IP</strong>, que pode ser usado para estimar sua localização geral; <strong>interações</strong> como abertura do app, toques e vídeos assistidos; <strong>diagnósticos</strong> como tempo de abertura, travamentos e consumo de energia; e <strong>identificadores</strong>: o <strong>ID de publicidade</strong> do aparelho e o app set ID. Esses dados são criptografados em trânsito (TLS). O Google os usa para exibir e medir anúncios e prevenir fraudes, de acordo com a própria política de privacidade.</p>
+<p><strong>O formulário de consentimento do Google:</strong> no Espaço Econômico Europeu, no Reino Unido, na Suíça e em outros lugares onde o Google exige, o formulário dele abre uma vez, na primeira vez em que anúncios podem aparecer (na tela inicial ou no mapa, nunca durante um nível). Nenhum anúncio é solicitado antes da sua resposta. Você escolhe se o Google pode personalizar anúncios e usar seus dados para as finalidades que ele lista. Se você recusar, o Google ainda pode mostrar anúncios não personalizados ou limitados, que usam menos dados (por exemplo, para contar anúncios e prevenir fraudes).</p>
+<p><strong>Mudar suas escolhas:</strong> Configurações → <strong>“Escolhas de anúncios”</strong> reabre o formulário do Google (a linha aparece onde o formulário se aplica). Em qualquer celular Android, você também pode redefinir ou excluir seu ID de publicidade nas configurações do sistema (Privacidade → Anúncios, ou Google → Anúncios, conforme o aparelho).</p>
+<p><strong>“Sem anúncios”:</strong> essa compra remove de vez os anúncios entre níveis. Os vídeos que você escolhe assistir continuam disponíveis, então o serviço de anúncios continua ativo para eles.</p>
+<p>Anúncios e estatísticas são duas escolhas separadas: aceitar as estatísticas não personaliza anúncios, e aceitar os anúncios não liga as estatísticas.</p>
+
+<h2>3. Compras no app</h2>
+<p>As compras são opcionais: “Sem anúncios”, o passe premium do mês, pacotes de moedas, vidas cheias. Nada que você precise para terminar um nível é vendido. Os pagamentos são processados pelo <strong>Google Play</strong>, nos termos do Google: seu cartão e seus dados de pagamento vão para o Google, <strong>nunca para nós</strong>. O jogo só recebe do Google Play qual produto foi comprado e um token do pedido, para entregá-lo; ele guarda no dispositivo o que você possui e a impressão digital descrita na seção 1. Reembolsos são feitos pelo Google Play.</p>
+<p>Se você aceitou as estatísticas (seção 4), o jogo também envia um evento “moedas compradas” (qual pacote, quantas moedas, seu nível; nunca o preço nem o recibo), e o Firebase registra automaticamente que uma compra no app foi concluída (produto, preço, moeda, quantidade), como o Google documenta. Isso serve só para entender o jogo, nunca para anúncios.</p>
+
+<h2>4. Estatísticas e relatórios de falhas, se você disser sim (Android)</h2>
+<p>Se você concordar, o jogo usa dois serviços do Google: <strong>Google Analytics para Firebase</strong> e <strong>Firebase Crashlytics</strong>.</p>
+<ul>
+<li><strong>Eventos do jogo:</strong> um nível iniciado, vencido, perdido ou abandonado (número, tentativa, duração, boosters usados, bolotas restantes, motivo da derrota, nível principal ou de evento), um booster usado, moedas gastas (em quê e quantas), moedas compradas (seção 3), uma tela aberta (mapa, vila, álbuns, loja, configurações…).</li>
+<li><strong>Eventos registrados automaticamente pelo Firebase:</strong> primeira abertura, início de sessão, tempo no app, atualização do app, atualização do sistema, desinstalação, compra no app concluída.</li>
 <li><strong>Informações técnicas:</strong> marca e modelo do aparelho, versão do Android, versão do app, idioma, e se é a versão da loja ou uma versão de teste.</li>
-<li><strong>Identificadores:</strong> identificadores aleatórios criados pelo app na instalação (ID da instância do Analytics, ID de instalação do Crashlytics, ID de instalação do Firebase). Eles não dizem quem você é e mudam se você reinstalar o jogo ou apagar os dados dele.</li>
-<li><strong>Localização aproximada:</strong> país e região, estimados pelo Google a partir do seu endereço IP. Para usuários da União Europeia, do Reino Unido e da Suíça, o Google Analytics não registra nem armazena o endereço IP.</li>
-<li><strong>Relatórios de falhas:</strong> o registro técnico da falha, informações técnicas sobre o aparelho e o app naquele momento, e o nível e a tela em que você estava.</li>
+<li><strong>Identificadores:</strong> identificadores aleatórios criados pelo app na instalação (ID da instância do Analytics, ID de instalação do Crashlytics, ID de instalação do Firebase). Eles não dizem quem você é e mudam se você reinstalar o jogo ou limpar os dados dele. O Firebase não lê seu ID de publicidade nem o Android ID.</li>
+<li><strong>Localização aproximada:</strong> país e região, estimados pelo Google a partir do seu endereço IP. Para usuários da UE, do Reino Unido e da Suíça, o Google Analytics não registra nem guarda o endereço IP.</li>
+<li><strong>Relatórios de falhas:</strong> o rastro técnico da falha, informações técnicas do aparelho e do app naquele momento, e o nível e a tela em que você estava.</li>
 </ul>
-<p><strong>Nunca coletamos:</strong> seu nome, e-mail, número de telefone, contatos, fotos ou arquivos, localização exata, ID de publicidade, Android ID, dados de pagamento, nem nada do que você digita.</p>
-<p><strong>Para quê:</strong> para corrigir bugs e falhas, ajustar a dificuldade dos níveis e entender de quais partes do jogo os jogadores mais gostam. Esses dados não são usados para publicidade nem para criar perfis, e nunca são vendidos. <strong>Base legal:</strong> o seu consentimento (art. 7º, I, da LGPD e art. 6º, 1, a, do RGPD europeu).</p>
-<p><strong>No iOS:</strong> a versão atual para iOS não envia nada, nem depois de “Sim”. Se isso mudar, esta página será atualizada antes.</p>
+<p><strong>Nunca coletados para as estatísticas:</strong> seu nome, e-mail, número de telefone, contatos, fotos ou arquivos, localização precisa, ID de publicidade, Android ID, dados de pagamento, nem nada que você digite.</p>
+<p><strong>Por quê:</strong> para corrigir bugs e falhas, ajustar a dificuldade dos níveis e ver de quais partes do jogo os jogadores gostam. Esses dados não são usados para publicidade nem para criar perfis, e nunca são vendidos. <strong>Base legal:</strong> seu consentimento (art. 7º, I, da LGPD; art. 6(1)(a) do RGPD).</p>
 
-<h2>3. Antes da sua resposta e depois de “Não, obrigado”</h2>
+<h2>5. Antes de responder, e depois de “Não, obrigado”</h2>
 <ul>
-<li>O jogo começa com toda a coleta desligada.</li>
-<li>Enquanto você não responde, nada sai do seu aparelho. Os eventos da sessão ficam só na memória (nunca no armazenamento) e são descartados se você não disser sim durante essa sessão. Um relatório de falha registrado antes da sua resposta é apagado na abertura seguinte e não será enviado, mesmo que você diga sim depois.</li>
-<li>Se você escolher “Não, obrigado” (no cartão da pergunta ou depois, em Configurações), toda a coleta para na hora, os relatórios de falhas que ainda estavam no aparelho são apagados e nada mais é guardado.</li>
+<li>O jogo começa com todas as estatísticas desligadas.</li>
+<li>Até você responder, nenhuma estatística sai do dispositivo. Os eventos da sessão atual esperam só na memória (nunca no armazenamento) e são descartados se você não disser sim durante essa sessão. Um relatório de falha registrado antes da sua resposta é apagado na próxima abertura e não será enviado mesmo que você diga sim depois.</li>
+<li>Se você escolher “Não, obrigado” (no cartão da pergunta, ou depois nas Configurações), as estatísticas param na hora, os relatórios de falhas ainda pendentes no dispositivo são apagados e nada mais é guardado.</li>
 <li>Fechar o cartão sem responder não decide nada; o jogo vai perguntar de novo em outra sessão.</li>
+<li>Essa pergunta é só sobre estatísticas. Os anúncios têm escolhas próprias (seção 2).</li>
 </ul>
 
-<h2>4. Mude de ideia quando quiser</h2>
-<p>Na tela inicial, toque na engrenagem (<strong>Configurações</strong>) e depois na linha <strong>“Estatísticas: sim”</strong> ou <strong>“Estatísticas: não”</strong>. A pergunta abre de novo: escolha <strong>“Não, obrigado”</strong> ou <strong>“Sim, claro”</strong>. A nova escolha vale na hora, e nada muda no jogo, seja qual for a resposta.</p>
-
-<h2>5. Por quanto tempo os dados são guardados</h2>
+<h2>6. Mude de ideia quando quiser</h2>
+<p>Na tela inicial, toque na engrenagem (<strong>Configurações</strong>):</p>
 <ul>
-<li><strong>Analytics:</strong> os dados detalhados de eventos ficam guardados por 2 meses e depois são excluídos. Relatórios agregados (totais como “número de jogadores que chegaram ao nível 10”) não têm nenhum identificador e podem ser mantidos por mais tempo.</li>
-<li><strong>Crashlytics:</strong> os relatórios de falhas e seus identificadores ficam guardados por 90 dias.</li>
+<li><strong>Estatísticas:</strong> a linha <strong>“Enviar estatísticas: sim”</strong> ou <strong>“Enviar estatísticas: não”</strong> reabre a pergunta: escolha <strong>“Não, obrigado”</strong> ou <strong>“Sim, claro”</strong>. Sua nova escolha vale na hora, e nada muda no jogo em nenhum dos casos.</li>
+<li><strong>Anúncios:</strong> a linha <strong>“Escolhas de anúncios”</strong> reabre o formulário de consentimento do Google (seção 2).</li>
+<li><strong>Compras:</strong> a linha <strong>“Restaurar compras”</strong> devolve o que você comprou.</li>
 </ul>
-<p>Dizer não interrompe qualquer envio novo; o que já foi enviado segue esses prazos. Como esses dados não têm nome nem contato, em geral não conseguimos saber quais são os seus. Se quiser que a gente tente excluí-los, escreva para nós (veja Contato).</p>
 
-<h2>6. Quem trata os dados, e onde</h2>
-<p>O Google trata esses dados em nosso nome, como operador, de acordo com os termos do Firebase e os termos de tratamento e segurança de dados que os acompanham. Os dados são criptografados durante o envio (HTTPS) e podem ser tratados em qualquer país onde o Google tenha instalações, com as garantias previstas nesses termos. Desligamos os sinais de publicidade: nenhum ID de publicidade é coletado, e os sinais de consentimento ligados a anúncios são sempre enviados como recusados. Não compartilhamos esses dados com mais ninguém.</p>
-<p>Saiba mais: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Privacidade e segurança no Firebase</a> · <a href="https://policies.google.com/privacy?hl=pt-BR" rel="noopener noreferrer">Política de Privacidade do Google</a></p>
+<h2>7. Por quanto tempo os dados são guardados</h2>
+<ul>
+<li><strong>Analytics:</strong> os dados detalhados de eventos são guardados por 2 meses e depois apagados. Relatórios agregados (totais como “número de jogadores que chegaram ao nível 10”) não contêm identificador e podem ser guardados por mais tempo.</li>
+<li><strong>Crashlytics:</strong> os relatórios de falhas e seus identificadores são guardados por 90 dias.</li>
+<li><strong>Anúncios:</strong> o Google guarda os dados coletados pelo serviço de anúncios conforme as próprias regras de retenção (link abaixo).</li>
+</ul>
+<p>Dizer não interrompe qualquer nova estatística; o que já foi enviado segue esses prazos. Como esses dados não contêm nome nem contato, normalmente não conseguimos saber quais são os seus. Se quiser que tentemos apagá-los, escreva para nós (veja Contato).</p>
 
-<h2>7. Anúncios e compras</h2>
-<p>A versão atual não tem anúncios nem compras no app. Se incluirmos anúncios ou compras, esta página será atualizada antes do lançamento dessa versão e, quando a lei exigir, vamos pedir o seu consentimento de novo.</p>
+<h2>8. Quem trata os dados, e onde</h2>
+<p><strong>Estatísticas:</strong> o Google as trata em nosso nome, como prestador de serviços (“operador”), conforme os termos do Firebase e seus termos de tratamento e segurança de dados. Desligamos os sinais de publicidade no Firebase: suas estatísticas nunca são ligadas a anúncios.</p>
+<p><strong>Anúncios:</strong> o Google recebe os dados descritos na seção 2 e os usa para publicidade, medição e prevenção de fraudes conforme as próprias políticas, incluindo a política de consentimento de usuários da UE. <strong>Compras:</strong> o Google Play processa os pagamentos.</p>
+<p>Os dados são criptografados em trânsito e podem ser tratados em qualquer país onde o Google tenha instalações, com as salvaguardas previstas nos termos do Google. Não compartilhamos dados com ninguém além desses serviços do Google e nunca os vendemos.</p>
+<p>Saiba mais: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Privacidade e segurança no Firebase</a> · <a href="https://policies.google.com/technologies/partner-sites?hl=pt-BR" rel="noopener noreferrer">Como o Google usa informações de apps que usam seus serviços</a> · <a href="https://policies.google.com/technologies/retention?hl=pt-BR" rel="noopener noreferrer">Como o Google retém dados</a> · <a href="https://policies.google.com/privacy?hl=pt-BR" rel="noopener noreferrer">Política de Privacidade do Google</a></p>
 
-<h2>8. Permissões</h2>
-<p>O jogo não acessa seus contatos, arquivos, fotos, localização, microfone nem câmera.</p>
+<h2>9. Permissões</h2>
+<p>O jogo pede ao Android: acesso à internet e ao estado da rede (anúncios, estatísticas, compras); o ID de publicidade e os serviços de anúncios do Android (atribuição e tópicos), usados pelo serviço de anúncios do Google; o faturamento do Google Play (compras); a vibração; e tarefas curtas em segundo plano usadas pelas bibliotecas do Google. Ele não acessa seus contatos, arquivos, fotos, localização, microfone nem câmera.</p>
 
-<h2>9. Crianças</h2>
-<p>Acorn Crew não foi feito para crianças com menos de 13 anos, e não coletamos intencionalmente dados pessoais de crianças. O jogo nunca pergunta idade nem nome. Se uma criança jogar, um responsável pode escolher “Não, obrigado” (ou deixar Estatísticas em não nas Configurações): nada é enviado. No Brasil, dados de crianças só podem ser tratados com o consentimento de um dos pais ou responsável, e em alguns países esse consentimento é exigido até os 16 anos. Se você acredita que dados de uma criança foram enviados, escreva para nós.</p>
+<h2>10. Crianças</h2>
+<p>Acorn Crew não foi feito para crianças menores de 13 anos, e seus anúncios são anúncios comuns, não certificados para crianças. Não coletamos intencionalmente dados pessoais de crianças; o jogo nunca pede idade nem nome. Um responsável pode escolher “Não, obrigado” para as estatísticas e, onde o formulário do Google aparece, recusar anúncios personalizados. Em alguns países, é preciso o consentimento de um responsável para dizer sim antes dos 16 anos (ou de uma idade menor definida pela lei local). Se você acredita que dados de uma criança foram enviados, escreva para nós.</p>
 
-<h2>10. Seus direitos</h2>
-<p>Conforme o lugar onde você mora (por exemplo, pela LGPD no Brasil ou pelo RGPD na Europa), você pode pedir acesso aos seus dados, a correção ou a exclusão deles, ou se opor ao uso. Você pode retirar o seu consentimento a qualquer momento em Configurações (veja o item 4), sem perder nada no jogo. Também pode reclamar à autoridade de proteção de dados (no Brasil, a ANPD).</p>
+<h2>11. Plataformas</h2>
+<p>No momento, Acorn Crew só está publicado no Android (Google Play). Esta página será atualizada antes do lançamento de qualquer outra versão.</p>
 
-<h2>11. Mudanças</h2>
-<p>Se esta política mudar, atualizaremos esta página e a data no topo.</p>
+<h2>12. Seus direitos</h2>
+<p>Dependendo de onde você mora (por exemplo, pela LGPD no Brasil ou pelo RGPD na Europa), você pode pedir acesso, correção ou exclusão dos seus dados, ou se opor ao uso deles. Você pode retirar seu consentimento a qualquer momento nas Configurações (veja a seção 6), sem perder nada no jogo. Você também pode reclamar à autoridade de proteção de dados (no Brasil, a ANPD).</p>
+
+<h2>13. Alterações</h2>
+<p>Se esta política mudar, atualizaremos esta página e a data no topo antes do lançamento da versão afetada.</p>
 
 <h2>Contato</h2>
 <p>GoodApps Studio — <a href="mailto:sylvain69740@gmail.com">sylvain69740@gmail.com</a></p>
 </section>
 
-<!-- ============================================================== 日本語 -->
-<section id="ja" lang="ja">
-<h1>Acorn Crew プライバシーポリシー</h1>
-<p class="date">施行日：2026年11月6日</p>
-<p><strong>Acorn Crew</strong>（Android パッケージ名 <code>com.goodapps.acorncrew</code>）は、GoodApps Studio（以下「当スタジオ」）が提供するパズルゲームです。このページでは、ゲームが端末に保存するもの、送信することがあるもの、そしてあなたが選べることを、わかりやすく説明します。</p>
+<!-- ============================================================== ITALIANO -->
+<section id="it" lang="it">
+<h1>Acorn Crew — Informativa sulla privacy</h1>
+<p class="date">Data di entrata in vigore: 9 novembre 2026</p>
+<p><strong>Acorn Crew</strong> (pacchetto Android <code>com.goodapps.acorncrew</code>) è un gioco rompicapo pubblicato da GoodApps Studio («noi»). Questa pagina spiega, con parole semplici, che cosa il gioco conserva sul tuo dispositivo, che cosa invia, a chi, e quali scelte hai.</p>
 
 <div class="short">
-<h2>ポイント</h2>
+<h2>In breve</h2>
 <ul>
-<li><strong>アカウント登録もログインも不要</strong>です。進行状況は<strong>あなたの端末の中</strong>に保存されます。</li>
-<li>現在のバージョンには、<strong>広告もアプリ内課金もありません</strong>。</li>
-<li>プレイの統計とクラッシュレポートは、<strong>「はい、協力する」を選んだ場合にだけ</strong> Google Firebase に送られます。回答する前は何も送られず、「いいえ」を選んだ後も送られません。</li>
-<li>名前、メールアドレス、連絡先、広告 ID は一切送りません。パーソナライズ広告には使わず、データを販売することもありません。</li>
-<li><strong>設定</strong>から、いつでも選び直せます。</li>
+<li><strong>Nessun account</strong>, nessun accesso. I tuoi progressi restano <strong>sul tuo dispositivo</strong>.</li>
+<li>Il gioco mostra <strong>annunci forniti da Google AdMob</strong>: video che scegli di guardare (dal livello 20) e, dal livello 35, un annuncio a schermo intero tra alcuni livelli. Il servizio pubblicitario di Google riceve il tuo indirizzo IP, le tue interazioni con gli annunci, dati tecnici e l’<strong>ID pubblicità</strong> del dispositivo. Dove la legge lo richiede (UE, Regno Unito, Svizzera…), il <strong>modulo di consenso di Google</strong> te lo chiede prima, e puoi riaprirlo in Impostazioni → <strong>«Scelte sugli annunci»</strong>.</li>
+<li>Gli <strong>acquisti in-app</strong> (come «Senza pubblicità») sono facoltativi e gestiti da <strong>Google Play</strong>. Non vediamo mai i tuoi dati di pagamento.</li>
+<li>Statistiche di gioco e rapporti sugli arresti anomali vanno a Google Firebase <strong>solo se scegli «Sì, volentieri»</strong>. Non contengono mai il tuo ID pubblicità e non servono mai alla pubblicità.</li>
+<li>Mai il tuo nome, la tua email o i tuoi contatti. Non vendiamo mai dati.</li>
 </ul>
 </div>
 
-<h2>1. 端末の中に保存されるもの</h2>
-<p>ゲームは進行状況を、アプリ専用の保存領域にあるファイルに記録します。内容は、到達したレベル、コイン、ブースター、星、村、アルバム、きせかえ、ライフ、サウンド・音楽・振動の設定、そして統計についての質問への回答と、回答した日付（あなたが選んだことの記録）です。このほか、直近数百件のゲーム内の出来事（たとえば「レベルをクリアした」など）の記録を、端末の中だけで使うために保持します。</p>
-<p>当スタジオにはゲーム用のサーバーがなく、これらのデータを受け取ることはありません。端末のシステムバックアップ（Google または Apple）を有効にしている場合は、あなた自身のアカウントにコピーが含まれることがありますが、当スタジオはそれにアクセスできません。</p>
-<p>ゲームをアンインストールするか、アプリのデータを消去すると、進行状況も含めてすべて削除されます。</p>
+<h2>1. Che cosa resta sul tuo dispositivo</h2>
+<p>Il gioco salva i tuoi progressi in un file nella memoria privata dell’app: livello raggiunto, monete, potenziamenti, stelle, villaggio, album, guardaroba, vite, impostazioni di suono, musica e vibrazione, la tua risposta alla domanda sulle statistiche con il giorno in cui l’hai data, i contatori degli annunci (quando è stato mostrato l’ultimo, quanti video hai guardato oggi, se possiedi «Senza pubblicità») e gli acquisti che possiedi, ciascuno con una breve impronta del suo ordine (mai l’ordine stesso, mai dati di pagamento), perché nulla venga accreditato due volte. Tiene anche un registro locale delle ultime centinaia di eventi di gioco (per esempio un livello vinto), usato solo sul dispositivo.</p>
+<p>Non riceviamo mai questo file: non abbiamo un server di gioco. Se il backup di sistema del telefono è attivo, può conservarne una copia nel tuo account Google; noi non vi abbiamo accesso.</p>
+<p>Disinstallare il gioco, o cancellarne i dati, elimina tutto. Gli acquisti che durano («Senza pubblicità», il pass premium del mese) tornano con <strong>«Ripristina acquisti»</strong> nelle Impostazioni.</p>
 
-<h2>2. 「はい」を選んだ場合に送られるもの（Android）</h2>
-<p>同意いただいた場合、ゲームは Google の2つのサービス、<strong>Google Analytics for Firebase</strong> と <strong>Firebase Crashlytics</strong> を利用します。</p>
+<h2>2. Annunci</h2>
+<p><strong>Chi li fornisce:</strong> Google AdMob (l’SDK Google Mobile Ads), l’unica rete pubblicitaria del gioco. Non ci sono banner.</p>
 <ul>
-<li><strong>ゲーム内の出来事：</strong>レベルの開始・クリア・失敗・中断（レベル番号、何回目の挑戦か、かかった時間、使ったブースター、残ったどんぐりの数、失敗の理由、本編のレベルかイベントのレベルか）、ブースターの使用、コインの使用（使い道と枚数）、ゲーム画面の表示（マップ、村、アルバム、設定など）。</li>
-<li><strong>Firebase が自動で記録する出来事：</strong>初回起動、セッションの開始、アプリの利用時間、アプリのアップデート、OS のアップデート、アンインストール。</li>
+<li><strong>Dal livello 20</strong>, nel pannello «Le tue vite», il pulsante <strong>«Guarda un video (+1)»</strong> ti dà una vita in cambio di un video. È sempre una tua scelta, al massimo 10 al giorno.</li>
+<li><strong>Dal livello 35</strong>, un annuncio a schermo intero può apparire quando prosegui dopo aver vinto un livello: al massimo uno ogni 3 livelli vinti e a 3 minuti di distanza. Mai dopo un livello perso, mai nella tua prima sessione, mai nei livelli evento.</li>
+<li>Prima del livello 20 il servizio pubblicitario non viene nemmeno avviato: nessun dato pubblicitario lascia il dispositivo.</li>
+</ul>
+<p><strong>Che cosa raccoglie il servizio pubblicitario di Google</strong> (l’elenco di Google per il suo SDK): il tuo <strong>indirizzo IP</strong>, che può servire a stimare la tua posizione generale; <strong>interazioni</strong> come l’avvio dell’app, i tocchi e i video visti; <strong>diagnostica</strong> come il tempo di avvio, i blocchi e il consumo di energia; e <strong>identificatori</strong>: l’<strong>ID pubblicità</strong> del dispositivo e l’app set ID. Questi dati sono crittografati in transito (TLS). Google li usa per mostrare e misurare gli annunci e prevenire le frodi, secondo la propria informativa sulla privacy.</p>
+<p><strong>Il modulo di consenso di Google:</strong> nello Spazio economico europeo, nel Regno Unito, in Svizzera e ovunque Google lo richieda, il suo modulo si apre una volta, la prima volta che possono apparire annunci (nella schermata iniziale o sulla mappa, mai durante un livello). Nessun annuncio viene richiesto prima della tua risposta. Scegli tu se Google può personalizzare gli annunci e usare i tuoi dati per le finalità che elenca. Se rifiuti, Google può comunque mostrare annunci non personalizzati o limitati, che usano meno dati (per esempio per contare gli annunci e prevenire le frodi).</p>
+<p><strong>Cambiare le tue scelte:</strong> Impostazioni → <strong>«Scelte sugli annunci»</strong> riapre il modulo di Google (la riga compare dove il modulo si applica). Su qualsiasi telefono Android puoi anche reimpostare o eliminare il tuo ID pubblicità nelle impostazioni di sistema (Privacy → Annunci, oppure Google → Annunci, a seconda del telefono).</p>
+<p><strong>«Senza pubblicità»:</strong> questo acquisto toglie per sempre gli annunci tra un livello e l’altro. I video che scegli di guardare restano disponibili, quindi per loro il servizio pubblicitario resta attivo.</p>
+<p>Annunci e statistiche sono due scelte separate: accettare le statistiche non personalizza gli annunci, e accettare gli annunci non attiva le statistiche.</p>
+
+<h2>3. Acquisti in-app</h2>
+<p>Gli acquisti sono facoltativi: «Senza pubblicità», il pass premium del mese, pacchetti di monete, vite piene. Non si vende nulla di necessario per finire un livello. I pagamenti sono gestiti da <strong>Google Play</strong>, secondo i termini di Google: la tua carta e i tuoi dati di pagamento vanno a Google, <strong>mai a noi</strong>. Il gioco riceve da Google Play solo quale prodotto è stato acquistato e un token dell’ordine, per consegnartelo; conserva sul dispositivo ciò che possiedi e l’impronta descritta al punto 1. I rimborsi passano da Google Play.</p>
+<p>Se hai accettato le statistiche (punto 4), il gioco invia anche un evento «monete acquistate» (quale pacchetto, quante monete, il tuo livello; mai il prezzo né la ricevuta), e Firebase registra automaticamente che un acquisto in-app è stato completato (prodotto, prezzo, valuta, quantità), come documenta Google. Serve solo a capire il gioco, mai alla pubblicità.</p>
+
+<h2>4. Statistiche e rapporti sugli arresti anomali, se dici sì (Android)</h2>
+<p>Se accetti, il gioco usa due servizi di Google: <strong>Google Analytics per Firebase</strong> e <strong>Firebase Crashlytics</strong>.</p>
+<ul>
+<li><strong>Eventi di gioco:</strong> un livello iniziato, vinto, perso o abbandonato (numero, tentativo, durata, potenziamenti usati, ghiande rimaste, causa della sconfitta, livello principale o evento), un potenziamento usato, monete spese (per che cosa e quante), monete acquistate (punto 3), una schermata aperta (mappa, villaggio, album, negozio, impostazioni…).</li>
+<li><strong>Eventi registrati automaticamente da Firebase:</strong> primo avvio, inizio sessione, tempo trascorso nell’app, aggiornamento dell’app, aggiornamento del sistema, disinstallazione, acquisto in-app completato.</li>
+<li><strong>Informazioni tecniche:</strong> marca e modello del dispositivo, versione di Android, versione dell’app, lingua, e se si tratta della versione dello store o di una versione di prova.</li>
+<li><strong>Identificatori:</strong> identificatori casuali creati dall’app all’installazione (ID istanza di Analytics, ID installazione di Crashlytics, ID installazione di Firebase). Non dicono chi sei e cambiano se reinstalli il gioco o ne cancelli i dati. Firebase non legge il tuo ID pubblicità né l’Android ID.</li>
+<li><strong>Posizione approssimativa:</strong> paese e regione, stimati da Google a partire dal tuo indirizzo IP. Per gli utenti di UE, Regno Unito e Svizzera, Google Analytics non registra né conserva l’indirizzo IP.</li>
+<li><strong>Rapporti sugli arresti anomali:</strong> la traccia tecnica dell’arresto, informazioni tecniche sul dispositivo e sull’app in quel momento, e il livello e la schermata in cui eri.</li>
+</ul>
+<p><strong>Mai raccolti per le statistiche:</strong> il tuo nome, indirizzo email, numero di telefono, contatti, foto o file, posizione precisa, ID pubblicità, Android ID, dati di pagamento, né nulla di ciò che scrivi.</p>
+<p><strong>Perché:</strong> per correggere bug e arresti anomali, regolare la difficoltà dei livelli e capire quali parti del gioco piacciono. Questi dati non servono alla pubblicità né alla profilazione e non vengono mai venduti. <strong>Base giuridica:</strong> il tuo consenso (art. 6, par. 1, lett. a del GDPR).</p>
+
+<h2>5. Prima della tua risposta, e dopo «No, grazie»</h2>
+<ul>
+<li>Il gioco parte con tutte le statistiche disattivate.</li>
+<li>Finché non rispondi, nessuna statistica lascia il dispositivo. Gli eventi della sessione in corso attendono solo in memoria (mai sul disco) e vengono scartati se non dici sì durante quella sessione. Un rapporto sugli arresti anomali registrato prima della tua risposta viene cancellato all’avvio successivo e non verrà inviato nemmeno se dici sì più tardi.</li>
+<li>Se scegli «No, grazie» (sulla scheda della domanda, o più tardi nelle Impostazioni), le statistiche si fermano subito, i rapporti ancora in attesa sul dispositivo vengono cancellati e non viene conservato altro.</li>
+<li>Chiudere la scheda senza rispondere non decide nulla; il gioco lo chiederà di nuovo in una sessione successiva.</li>
+<li>Questa domanda riguarda solo le statistiche. Gli annunci hanno le loro scelte (punto 2).</li>
+</ul>
+
+<h2>6. Cambia idea quando vuoi</h2>
+<p>Nella schermata iniziale, tocca l’ingranaggio (<strong>Impostazioni</strong>):</p>
+<ul>
+<li><strong>Statistiche:</strong> la riga <strong>«Condividi statistiche: sì»</strong> o <strong>«Condividi statistiche: no»</strong> riapre la domanda: scegli <strong>«No, grazie»</strong> o <strong>«Sì, volentieri»</strong>. La nuova scelta vale subito, e nel gioco non cambia nulla in nessuno dei due casi.</li>
+<li><strong>Annunci:</strong> la riga <strong>«Scelte sugli annunci»</strong> riapre il modulo di consenso di Google (punto 2).</li>
+<li><strong>Acquisti:</strong> la riga <strong>«Ripristina acquisti»</strong> ti restituisce ciò che hai comprato.</li>
+</ul>
+
+<h2>7. Per quanto tempo sono conservati i dati</h2>
+<ul>
+<li><strong>Analytics:</strong> i dati dettagliati degli eventi sono conservati per 2 mesi, poi cancellati. I report aggregati (totali come «numero di giocatori arrivati al livello 10») non contengono identificatori e possono essere conservati più a lungo.</li>
+<li><strong>Crashlytics:</strong> i rapporti sugli arresti anomali e i loro identificatori sono conservati per 90 giorni.</li>
+<li><strong>Annunci:</strong> Google conserva i dati raccolti dal suo servizio pubblicitario secondo le proprie regole di conservazione (link sotto).</li>
+</ul>
+<p>Dire no ferma ogni nuova statistica; ciò che è già stato inviato segue questi periodi. Poiché questi dati non contengono né nome né recapiti, di solito non possiamo sapere quali sono i tuoi. Se vuoi che proviamo a cancellarli, scrivici (vedi Contatti).</p>
+
+<h2>8. Chi tratta i dati, e dove</h2>
+<p><strong>Statistiche:</strong> Google le tratta per nostro conto, come fornitore di servizi («responsabile del trattamento»), secondo i termini di Firebase e i relativi termini sul trattamento e la sicurezza dei dati. Abbiamo disattivato i segnali pubblicitari in Firebase: le tue statistiche non sono mai collegate agli annunci.</p>
+<p><strong>Annunci:</strong> Google riceve i dati descritti al punto 2 e li usa per pubblicità, misurazione e prevenzione delle frodi secondo le proprie norme, incluse le norme sul consenso degli utenti dell’UE. <strong>Acquisti:</strong> Google Play gestisce i pagamenti.</p>
+<p>I dati sono crittografati in transito e possono essere trattati in qualsiasi paese in cui Google ha strutture, con le garanzie previste dai termini di Google. Non condividiamo dati con nessuno al di fuori di questi servizi di Google e non li vendiamo mai.</p>
+<p>Per saperne di più: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Privacy e sicurezza in Firebase</a> · <a href="https://policies.google.com/technologies/partner-sites?hl=it" rel="noopener noreferrer">Come Google utilizza le informazioni delle app che usano i suoi servizi</a> · <a href="https://policies.google.com/technologies/retention?hl=it" rel="noopener noreferrer">Come Google conserva i dati</a> · <a href="https://policies.google.com/privacy?hl=it" rel="noopener noreferrer">Norme sulla privacy di Google</a></p>
+
+<h2>9. Autorizzazioni</h2>
+<p>Il gioco chiede ad Android: accesso a internet e allo stato della rete (annunci, statistiche, acquisti); l’ID pubblicità e i servizi pubblicitari di Android (attribuzione e argomenti), usati dal servizio pubblicitario di Google; la fatturazione di Google Play (acquisti); la vibrazione; e brevi attività in background usate dalle librerie di Google. Non accede ai tuoi contatti, file, foto, posizione, microfono né fotocamera.</p>
+
+<h2>10. Bambini</h2>
+<p>Acorn Crew non è pensato per bambini sotto i 13 anni, e i suoi annunci sono annunci normali, non certificati per i bambini. Non raccogliamo consapevolmente dati personali di bambini; il gioco non chiede mai età né nome. Un genitore può scegliere «No, grazie» per le statistiche e, dove compare il modulo di Google, rifiutare gli annunci personalizzati. In alcuni paesi serve il consenso di un genitore per dire sì prima dei 16 anni (o dell’età inferiore fissata dalla legge locale; in Italia, 14 anni). Se pensi che siano stati inviati dati di un bambino, scrivici.</p>
+
+<h2>11. Piattaforme</h2>
+<p>Al momento Acorn Crew è pubblicato solo su Android (Google Play). Questa pagina sarà aggiornata prima dell’uscita di qualsiasi altra versione.</p>
+
+<h2>12. I tuoi diritti</h2>
+<p>A seconda di dove vivi (per esempio in base al GDPR in Europa), puoi chiedere di accedere ai tuoi dati, rettificarli o cancellarli, oppure opporti al loro uso. Puoi revocare il consenso in qualsiasi momento nelle Impostazioni (vedi punto 6), senza perdere nulla nel gioco. Puoi anche presentare reclamo alla tua autorità per la protezione dei dati (in Italia, il Garante per la protezione dei dati personali).</p>
+
+<h2>13. Modifiche</h2>
+<p>Se questa informativa cambia, aggiorneremo questa pagina e la data in alto prima dell’uscita della versione interessata.</p>
+
+<h2>Contatti</h2>
+<p>GoodApps Studio — <a href="mailto:sylvain69740@gmail.com">sylvain69740@gmail.com</a></p>
+</section>
+
+<!-- ============================================================== 日本語 -->
+<section id="ja" lang="ja">
+<h1>Acorn Crew — プライバシーポリシー</h1>
+<p class="date">施行日：2026年11月9日</p>
+<p><strong>Acorn Crew</strong>（Android パッケージ <code>com.goodapps.acorncrew</code>）は、GoodApps Studio（以下「当社」）が配信するパズルゲームです。このページでは、ゲームが端末に保存するもの、送信するものとその送信先、そしてあなたが選べることを、わかりやすく説明します。</p>
+
+<div class="short">
+<h2>概要</h2>
+<ul>
+<li><strong>アカウント不要</strong>、ログインもありません。進行状況は<strong>あなたの端末に</strong>保存されます。</li>
+<li>このゲームには <strong>Google AdMob が配信する広告</strong>があります。自分で選んで見る動画（レベル20から）と、レベル35からは一部のレベルの合間に表示される全画面広告です。Google の広告サービスは、IP アドレス、広告の操作、技術データ、端末の<strong>広告 ID</strong> を受け取ります。法律で必要な地域（EU、英国、スイスなど）では、まず <strong>Google の同意フォーム</strong>が表示され、設定 →<strong>「広告の設定」</strong>からいつでも開き直せます。</li>
+<li><strong>アプリ内購入</strong>（「広告なし」など）は任意で、<strong>Google Play</strong> が処理します。当社が支払い情報を見ることはありません。</li>
+<li>プレイ統計とクラッシュレポートは、<strong>「はい、協力する」を選んだ場合にのみ</strong> Google Firebase に送信されます。広告 ID は含まれず、広告には一切使われません。</li>
+<li>名前、メールアドレス、連絡先は一切扱いません。データを販売することはありません。</li>
+</ul>
+</div>
+
+<h2>1. 端末に残るもの</h2>
+<p>ゲームはアプリ専用の保存領域にあるファイルに進行状況を保存します。到達レベル、コイン、ブースター、星、村、アルバム、着せ替え、ライフ、サウンド・音楽・振動の設定、統計についての回答とその日付、広告のカウンター（最後の広告の時刻、今日見た動画の数、「広告なし」の有無）、そして所有している購入品とその注文の短い指紋（注文そのものや支払い情報は保存しません。二重付与を防ぐためのものです）。また、直近数百件のゲーム内イベント（例：レベルクリア）のローカル記録も保持しますが、端末内でのみ使われます。</p>
+<p>このファイルが当社に届くことはありません。ゲームサーバーはありません。端末のシステムバックアップがオンの場合、あなた自身の Google アカウントにコピーが保存されることがありますが、当社はアクセスできません。</p>
+<p>アンインストールまたはデータ消去で、すべて削除されます。継続する購入品（「広告なし」、その月のプレミアムパス）は、設定の<strong>「購入を復元」</strong>で元に戻せます。</p>
+
+<h2>2. 広告</h2>
+<p><strong>配信元：</strong>Google AdMob（Google Mobile Ads SDK）。ゲーム内の唯一の広告ネットワークです。バナー広告はありません。</p>
+<ul>
+<li><strong>レベル20から</strong>、「ライフ」パネルの<strong>「動画を見る（+1）」</strong>ボタンで、動画1本と引き換えにライフが1つもらえます。見るかどうかは常にあなたの自由で、1日最大10回です。</li>
+<li><strong>レベル35から</strong>、レベルをクリアして先に進むときに全画面広告が表示されることがあります。クリア3回につき最大1回、間隔は3分以上です。負けたレベルの後、最初のセッション中、イベントレベルでは表示されません。</li>
+<li>レベル20に達するまでは、広告サービス自体が起動しません。広告のデータは端末の外に出ません。</li>
+</ul>
+<p><strong>Google の広告サービスが収集するもの</strong>（Google が自社 SDK について公開している一覧）：おおよその位置の推定に使われることがある <strong>IP アドレス</strong>、アプリの起動・タップ・動画の視聴などの<strong>操作</strong>、起動時間・フリーズ・電力消費などの<strong>診断情報</strong>、そして端末の<strong>広告 ID</strong> と app set ID などの<strong>識別子</strong>。これらは通信時に暗号化（TLS）されます。Google はこれらを、広告の表示と効果測定、不正防止のために、Google 自身のプライバシーポリシーに基づいて使用します。</p>
+<p><strong>Google の同意フォーム：</strong>欧州経済領域、英国、スイス、その他 Google が求める地域では、広告が初めて表示されうるとき（ホーム画面またはマップ。レベルのプレイ中は除く）に、Google のフォームが1回表示されます。回答前に広告がリクエストされることはありません。Google が広告をパーソナライズし、示された目的でデータを使うことに同意するかどうかを選べます。拒否した場合でも、Google はパーソナライズされていない広告や制限付きの広告を表示することがあり、それらはより少ないデータを使用します（広告の回数の計測や不正防止など）。</p>
+<p><strong>選択の変更：</strong>設定 →<strong>「広告の設定」</strong>で Google のフォームを再度開けます（フォームが適用される地域で表示されます）。また、どの Android 端末でも、システム設定（プライバシー → 広告、または Google → 広告。端末により異なります）で広告 ID をリセットまたは削除できます。</p>
+<p><strong>「広告なし」：</strong>この購入で、レベルの合間の広告がずっと表示されなくなります。自分で選んで見る動画は引き続き利用できるため、そのために広告サービスは動作し続けます。</p>
+<p>広告と統計は別々の選択です。統計に同意しても広告はパーソナライズされず、広告に同意しても統計はオンになりません。</p>
+
+<h2>3. アプリ内購入</h2>
+<p>購入は任意です（「広告なし」、その月のプレミアムパス、コインパック、ライフ全回復）。レベルのクリアに必要なものは販売していません。支払いは Google の規約に基づき <strong>Google Play</strong> が処理します。カード情報や支払い情報は Google に送られ、<strong>当社には一切届きません</strong>。ゲームが Google Play から受け取るのは、購入された商品と、商品を届けるための注文トークンだけです。端末には、所有している商品と第1項の指紋を保存します。払い戻しは Google Play で行われます。</p>
+<p>統計に同意した場合（第4項）、ゲームは「コイン購入」イベント（どのパックか、コイン数、あなたのレベル。価格やレシートは送りません）も送信し、Google の説明どおり、Firebase がアプリ内購入の完了（商品、価格、通貨、数量）を自動的に記録します。これはゲームを理解するためだけに使い、広告には使いません。</p>
+
+<h2>4. 同意した場合の統計とクラッシュレポート（Android）</h2>
+<p>同意すると、ゲームは Google の2つのサービス、<strong>Google Analytics for Firebase</strong> と <strong>Firebase Crashlytics</strong> を使います。</p>
+<ul>
+<li><strong>ゲーム内イベント：</strong>レベルの開始・クリア・失敗・中断（レベル番号、挑戦回数、時間、使ったブースター、残りのどんぐり、失敗の理由、通常レベルかイベントレベルか）、ブースターの使用、コインの消費（何に、いくら）、コインの購入（第3項）、開いた画面（マップ、村、アルバム、ショップ、設定など）。</li>
+<li><strong>Firebase が自動で記録するイベント：</strong>初回起動、セッション開始、アプリの利用時間、アプリの更新、システムの更新、アンインストール、アプリ内購入の完了。</li>
 <li><strong>技術情報：</strong>端末のメーカーと機種、Android のバージョン、アプリのバージョン、言語、ストア版かテスト版か。</li>
-<li><strong>識別子：</strong>インストール時にアプリが作るランダムな ID（Analytics のアプリインスタンス ID、Crashlytics のインストール ID、Firebase のインストール ID）。あなたが誰かを示すものではなく、再インストールやデータの消去で新しくなります。</li>
-<li><strong>おおよその地域：</strong>IP アドレスから Google が推定する国と地域。EU・英国・スイスのユーザーについては、Google アナリティクスは IP アドレスを記録も保存もしません。</li>
-<li><strong>クラッシュレポート：</strong>クラッシュの技術的な記録、その時点の端末とアプリの技術情報、プレイ中だったレベルと画面。</li>
+<li><strong>識別子：</strong>インストール時にアプリが作るランダムな識別子（Analytics のアプリインスタンス ID、Crashlytics のインストール ID、Firebase のインストール ID）。あなたが誰かを示すものではなく、再インストールやデータ消去で変わります。Firebase は広告 ID も Android ID も読み取りません。</li>
+<li><strong>おおよその位置：</strong>IP アドレスから Google が推定する国と地域。EU、英国、スイスのユーザーについては、Google アナリティクスは IP アドレスを記録・保存しません。</li>
+<li><strong>クラッシュレポート：</strong>クラッシュの技術的な記録、その時点の端末とアプリの技術情報、プレイ中のレベルと画面。</li>
 </ul>
-<p><strong>収集しないもの：</strong>名前、メールアドレス、電話番号、連絡先、写真やファイル、正確な位置情報、広告 ID、Android ID、支払い情報、あなたが入力した文字。</p>
-<p><strong>利用目的：</strong>バグやクラッシュを直すため、レベルの難しさを調整するため、ゲームのどこが楽しまれているかを知るため。広告やプロファイリングには使わず、販売することもありません。<strong>法的根拠：</strong>あなたの同意（EU 一般データ保護規則 第6条第1項(a)）。</p>
-<p><strong>iOS について：</strong>現在の iOS 版は、「はい」を選んだ後も何も送りません。これを変える場合は、先にこのページを更新します。</p>
+<p><strong>統計のために収集しないもの：</strong>名前、メールアドレス、電話番号、連絡先、写真やファイル、正確な位置情報、広告 ID、Android ID、支払い情報、入力した文字。</p>
+<p><strong>目的：</strong>バグやクラッシュの修正、レベルの難易度調整、ゲームのどこが楽しまれているかの把握のためです。これらのデータを広告やプロファイリングに使うことはなく、販売することもありません。<strong>法的根拠：</strong>あなたの同意（GDPR 第6条1項(a)）。</p>
 
-<h2>3. 回答する前と、「いいえ」を選んだ後</h2>
+<h2>5. 回答する前と「いいえ」を選んだ後</h2>
 <ul>
-<li>ゲームは、すべての収集をオフにした状態で起動します。</li>
-<li>回答するまでは、何も端末の外に出ません。そのセッションの出来事はメモリの中だけで待機し（ストレージには書き込みません）、そのセッション中に「はい」を選ばなければ破棄されます。回答前に記録されたクラッシュレポートは次回の起動時に削除され、後から「はい」を選んでも送られません。</li>
-<li>「いいえ」を選ぶと（質問のカードでも、後から設定でも）、すべての収集がすぐに止まり、端末に残っている未送信のクラッシュレポートは削除され、それ以降は何も保持しません。</li>
-<li>答えずにカードを閉じた場合は、何も決まりません。別のセッションであらためてお聞きします。</li>
+<li>ゲームはすべての統計がオフの状態で起動します。</li>
+<li>回答するまで、統計は端末の外に出ません。現在のセッションのイベントはメモリ上でのみ待機し（ストレージには保存しません）、そのセッション中に同意しなければ破棄されます。回答前に記録されたクラッシュレポートは次回起動時に削除され、後で同意しても送信されません。</li>
+<li>「いいえ」を選ぶと（質問カードで、または後で設定から）、統計はすぐに停止し、端末で送信待ちのクラッシュレポートは削除され、それ以降は何も保存されません。</li>
+<li>回答せずにカードを閉じた場合は何も決まりません。後のセッションで改めてお聞きします。</li>
+<li>この質問は統計だけに関するものです。広告には別の選択があります（第2項）。</li>
 </ul>
 
-<h2>4. いつでも選び直せます</h2>
-<p>ホーム画面の歯車アイコン（<strong>設定</strong>）をタップし、<strong>「統計：オン」</strong>または<strong>「統計：オフ」</strong>の行をタップします。質問がもう一度開くので、<strong>「いいえ」</strong>か<strong>「はい、協力する」</strong>を選んでください。新しい選択はすぐに反映され、どちらを選んでもゲームの内容は変わりません。</p>
-
-<h2>5. 保存期間</h2>
+<h2>6. いつでも考えを変えられます</h2>
+<p>ホーム画面の歯車（<strong>設定</strong>）をタップします。</p>
 <ul>
-<li><strong>Analytics：</strong>詳しいイベントデータは2か月間保存された後、削除されます。集計レポート（「レベル10に到達したプレイヤーの数」のような合計値）は識別子を含まず、それより長く保存されることがあります。</li>
+<li><strong>統計：</strong><strong>「データ送信：オン」</strong>または<strong>「データ送信：オフ」</strong>の行で質問が再び開きます。<strong>「いいえ」</strong>か<strong>「はい、協力する」</strong>を選んでください。新しい選択はすぐに反映され、どちらを選んでもゲーム内容は変わりません。</li>
+<li><strong>広告：</strong><strong>「広告の設定」</strong>の行で Google の同意フォームが再び開きます（第2項）。</li>
+<li><strong>購入：</strong><strong>「購入を復元」</strong>の行で、購入したものが戻ります。</li>
+</ul>
+
+<h2>7. データの保存期間</h2>
+<ul>
+<li><strong>Analytics：</strong>詳細なイベントデータは2か月間保存された後、削除されます。集計レポート（「レベル10に到達したプレイヤー数」などの合計）には識別子が含まれず、より長く保存されることがあります。</li>
 <li><strong>Crashlytics：</strong>クラッシュレポートとその識別子は90日間保存されます。</li>
+<li><strong>広告：</strong>Google は広告サービスが収集したデータを、Google 自身の保存ルールに従って保存します（下のリンク）。</li>
 </ul>
-<p>「いいえ」を選ぶと新しい送信はすべて止まりますが、それまでに送られたデータは上記の期間に従います。これらのデータには名前や連絡先が含まれないため、どれがあなたのデータかを当スタジオが特定することは通常できません。削除を希望される場合はご連絡ください。できる限り対応します。</p>
+<p>「いいえ」を選ぶと新たな統計は止まり、送信済みのものは上記の期間に従います。これらのデータには名前も連絡先も含まれないため、通常どれがあなたのデータか当社にはわかりません。削除を試みてほしい場合は、ご連絡ください（お問い合わせ参照）。</p>
 
-<h2>6. データを取り扱う事業者と場所</h2>
-<p>Google は、Firebase の利用規約と、それに付随するデータ処理・セキュリティ条項に基づき、当スタジオの委託先としてこれらのデータを取り扱います。データは送信時に暗号化され（HTTPS）、日本国外を含め、Google が施設を置くいずれかの国で処理されることがあり、その場合もこれらの条項に定められた保護措置が適用されます。広告用のシグナルはオフにしています。広告 ID は収集せず、広告に関する同意シグナルは常に「拒否」として送ります。当スタジオがこれらのデータを他の誰かと共有することはありません。</p>
-<p>詳しくは：<a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Firebase のプライバシーとセキュリティ</a> ・ <a href="https://policies.google.com/privacy?hl=ja" rel="noopener noreferrer">Google プライバシー ポリシー</a></p>
+<h2>8. データを処理する者と場所</h2>
+<p><strong>統計：</strong>Google が当社の委託先（「データ処理者」）として、Firebase の規約とそのデータ処理・セキュリティ条項に基づいて処理します。当社は Firebase の広告シグナルをオフにしています。あなたの統計が広告と結び付けられることはありません。</p>
+<p><strong>広告：</strong>Google は第2項のデータを受け取り、EU ユーザーの同意ポリシーを含む Google 自身のポリシーに基づき、広告、効果測定、不正防止に使用します。<strong>購入：</strong>支払いは Google Play が処理します。</p>
+<p>データは通信時に暗号化され、Google の規約に定める保護措置のもと、Google が施設を持つどの国でも処理される可能性があります。当社はこれらの Google のサービス以外にデータを共有せず、販売することもありません。</p>
+<p>詳しくは：<a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Firebase のプライバシーとセキュリティ</a> · <a href="https://policies.google.com/technologies/partner-sites?hl=ja" rel="noopener noreferrer">Google のサービスを使用するアプリから収集した情報の Google による使用</a> · <a href="https://policies.google.com/technologies/retention?hl=ja" rel="noopener noreferrer">Google のデータ保持</a> · <a href="https://policies.google.com/privacy?hl=ja" rel="noopener noreferrer">Google プライバシー ポリシー</a></p>
 
-<h2>7. 広告と課金</h2>
-<p>現在のバージョンには、広告もアプリ内課金もありません。追加する場合は、そのバージョンを公開する前にこのページを更新し、法律で必要な場合はあらためて同意をお願いします。</p>
+<h2>9. 権限</h2>
+<p>ゲームが Android に求める権限：インターネットとネットワーク状態（広告、統計、購入）、Google の広告サービスが使う広告 ID と Android の広告サービス（アトリビューションとトピック）、Google Play の課金（購入）、振動、Google のライブラリが使う短いバックグラウンド処理。連絡先、ファイル、写真、位置情報、マイク、カメラにはアクセスしません。</p>
 
-<h2>8. アクセス権限</h2>
-<p>ゲームは、連絡先、ファイル、写真、位置情報、マイク、カメラにアクセスしません。</p>
+<h2>10. 子ども</h2>
+<p>Acorn Crew は13歳未満の子ども向けに作られたものではなく、広告も子ども向けに認定された広告ではない通常の広告です。当社が子どもの個人データを意図的に収集することはなく、ゲームが年齢や名前を尋ねることもありません。保護者は統計で「いいえ」を選び、Google のフォームが表示される地域ではパーソナライズ広告を拒否できます。国によっては、16歳未満（または現地の法律で定める年齢未満）が同意するには保護者の同意が必要です。子どものデータが送信されたと思われる場合は、ご連絡ください。</p>
 
-<h2>9. お子さまについて</h2>
-<p>Acorn Crew は13歳未満のお子さま向けに作られたゲームではなく、当スタジオがお子さまの個人データを意図して集めることはありません。ゲームが年齢や名前を尋ねることもありません。お子さまが遊ぶ場合は、保護者の方が「いいえ」を選ぶ（または設定で統計をオフにする）と、何も送られません。国によっては、16歳未満（または各国の法律が定めるそれより低い年齢未満）の場合、「はい」を選ぶには保護者の同意が必要です。お子さまのデータが送られたと思われる場合は、ご連絡ください。</p>
+<h2>11. 対応プラットフォーム</h2>
+<p>Acorn Crew は現在、Android（Google Play）でのみ配信しています。他のバージョンを公開する前に、このページを更新します。</p>
 
-<h2>10. あなたの権利</h2>
-<p>お住まいの地域の法律（日本の個人情報保護法や欧州の GDPR など）に応じて、ご自身のデータの開示、訂正、削除、利用停止を求めることができます。同意は設定からいつでも撤回でき（4を参照）、撤回してもゲームで失うものはありません。また、データ保護の監督機関（日本では個人情報保護委員会）に申し立てることもできます。</p>
+<h2>12. あなたの権利</h2>
+<p>お住まいの地域（例えば欧州の GDPR）によっては、データの開示、訂正、削除を求めたり、利用に異議を述べたりできます。同意は設定からいつでも撤回でき（第6項）、ゲーム内で何かを失うことはありません。データ保護当局（日本では個人情報保護委員会）に申し立てることもできます。</p>
 
-<h2>11. 変更について</h2>
-<p>このポリシーを変更する場合は、このページと冒頭の日付を更新します。</p>
+<h2>13. 変更</h2>
+<p>このポリシーを変更する場合は、該当するバージョンの公開前に、このページと上部の日付を更新します。</p>
 
 <h2>お問い合わせ</h2>
 <p>GoodApps Studio — <a href="mailto:sylvain69740@gmail.com">sylvain69740@gmail.com</a></p>
@@ -565,88 +827,215 @@ footer{color:var(--mute);font-size:.85rem;padding-top:2rem;padding-bottom:2.5rem
 
 <!-- ============================================================== 한국어 -->
 <section id="ko" lang="ko">
-<h1>Acorn Crew 개인정보 처리방침</h1>
-<p class="date">시행일: 2026년 11월 6일</p>
-<p><strong>Acorn Crew</strong>(Android 패키지명 <code>com.goodapps.acorncrew</code>)는 GoodApps Studio(이하 ‘저희’)가 제공하는 퍼즐 게임입니다. 이 페이지에서는 게임이 기기에 저장하는 정보, 전송할 수 있는 정보, 그리고 여러분이 선택할 수 있는 것을 쉽게 설명합니다.</p>
+<h1>Acorn Crew — 개인정보 처리방침</h1>
+<p class="date">시행일: 2026년 11월 9일</p>
+<p><strong>Acorn Crew</strong>(Android 패키지 <code>com.goodapps.acorncrew</code>)는 GoodApps Studio(이하 “당사”)가 배포하는 퍼즐 게임입니다. 이 페이지는 게임이 기기에 저장하는 것, 보내는 것과 받는 곳, 그리고 여러분이 선택할 수 있는 것을 쉬운 말로 설명합니다.</p>
 
 <div class="short">
-<h2>한눈에 보기</h2>
+<h2>요약</h2>
 <ul>
-<li><strong>계정도 로그인도 필요 없습니다.</strong> 진행 상황은 <strong>여러분의 기기 안에</strong> 저장됩니다.</li>
-<li>현재 버전에는 <strong>광고도 인앱 결제도 없습니다</strong>.</li>
-<li>플레이 통계와 오류 보고서는 <strong>‘네, 좋아요’를 선택한 경우에만</strong> Google Firebase로 전송됩니다. 답하기 전에는 아무것도 전송되지 않고, ‘아니요’를 선택한 뒤에도 마찬가지입니다.</li>
-<li>이름, 이메일, 연락처, 광고 ID는 절대 보내지 않습니다. 맞춤 광고에 쓰지 않으며, 데이터를 판매하지 않습니다.</li>
-<li><strong>설정</strong>에서 언제든지 선택을 바꿀 수 있습니다.</li>
+<li><strong>계정 없음</strong>, 로그인 없음. 진행 상황은 <strong>여러분의 기기에</strong> 남습니다.</li>
+<li>이 게임에는 <strong>Google AdMob이 제공하는 광고</strong>가 있습니다. 직접 선택해서 보는 동영상(레벨 20부터)과, 레벨 35부터 일부 레벨 사이에 나오는 전면 광고입니다. Google 광고 서비스는 IP 주소, 광고와의 상호작용, 기술 데이터, 기기의 <strong>광고 ID</strong>를 받습니다. 법이 요구하는 곳(EU, 영국, 스위스 등)에서는 <strong>Google 동의 양식</strong>이 먼저 묻고, 설정 → <strong>“광고 설정”</strong>에서 다시 열 수 있습니다.</li>
+<li><strong>인앱 구매</strong>(“광고 없이” 등)는 선택 사항이며 <strong>Google Play</strong>가 처리합니다. 당사는 결제 정보를 절대 보지 않습니다.</li>
+<li>플레이 통계와 비정상 종료 보고서는 <strong>“네, 좋아요”를 선택한 경우에만</strong> Google Firebase로 전송됩니다. 광고 ID는 절대 포함되지 않고, 광고에 절대 쓰이지 않습니다.</li>
+<li>이름, 이메일, 연락처는 절대 다루지 않습니다. 데이터를 판매하지 않습니다.</li>
 </ul>
 </div>
 
-<h2>1. 기기 안에만 저장되는 정보</h2>
-<p>게임은 진행 상황을 앱 전용 저장 공간의 파일에 저장합니다. 도달한 레벨, 코인, 부스터, 별, 마을, 앨범, 옷장, 하트, 소리·음악·진동 설정, 그리고 통계 질문에 대한 답과 답한 날짜(선택하신 내용의 기록)가 여기에 담깁니다. 또한 최근 수백 건의 게임 기록(예: 레벨 클리어)을 기기 안에서만 쓰기 위해 보관합니다.</p>
-<p>저희에게는 게임 서버가 없으며, 이 데이터를 받지 않습니다. 휴대폰의 시스템 백업(Google 또는 Apple)을 켜 두셨다면 여러분 본인의 계정에 사본이 포함될 수 있지만, 저희는 그 사본에 접근할 수 없습니다.</p>
-<p>게임을 삭제하거나 앱 데이터를 지우면 진행 상황을 포함한 모든 정보가 삭제됩니다.</p>
+<h2>1. 기기에 남는 것</h2>
+<p>게임은 앱 전용 저장 공간의 파일에 진행 상황을 저장합니다. 도달한 레벨, 코인, 부스터, 별, 마을, 앨범, 옷장, 하트, 소리·음악·진동 설정, 통계 질문에 대한 답과 답한 날짜, 광고 카운터(마지막 광고 시각, 오늘 본 동영상 수, “광고 없이” 보유 여부), 그리고 보유한 구매 항목과 각 주문의 짧은 지문(주문 자체나 결제 정보는 저장하지 않으며, 중복 지급을 막기 위한 것입니다). 또한 최근 수백 건의 게임 이벤트(예: 레벨 클리어)를 기기 안에서만 쓰는 로컬 기록으로 보관합니다.</p>
+<p>이 파일은 당사에 전달되지 않습니다. 게임 서버가 없습니다. 휴대전화의 시스템 백업이 켜져 있으면 여러분의 Google 계정에 사본이 보관될 수 있으며, 당사는 접근할 수 없습니다.</p>
+<p>게임을 삭제하거나 데이터를 지우면 모두 삭제됩니다. 계속 유지되는 구매(“광고 없이”, 이달의 프리미엄 패스)는 설정의 <strong>“구매 복원”</strong>으로 되찾을 수 있습니다.</p>
 
-<h2>2. ‘네’를 선택하면 전송되는 정보 (Android)</h2>
-<p>동의하시면 게임은 Google의 두 가지 서비스, <strong>Google Analytics for Firebase</strong>와 <strong>Firebase Crashlytics</strong>를 사용합니다.</p>
+<h2>2. 광고</h2>
+<p><strong>제공자:</strong> Google AdMob(Google Mobile Ads SDK), 게임의 유일한 광고 네트워크입니다. 배너 광고는 없습니다.</p>
 <ul>
-<li><strong>게임 이벤트:</strong> 레벨 시작·클리어·실패·중단(레벨 번호, 도전 횟수, 걸린 시간, 사용한 부스터, 남은 도토리 수, 실패 원인, 본편 레벨인지 이벤트 레벨인지), 부스터 사용, 코인 사용(어디에 몇 개), 게임 화면 열기(지도, 마을, 앨범, 설정 등).</li>
-<li><strong>Firebase가 자동으로 기록하는 이벤트:</strong> 첫 실행, 세션 시작, 앱 사용 시간, 앱 업데이트, 운영체제 업데이트, 앱 삭제.</li>
-<li><strong>기술 정보:</strong> 기기 제조사와 모델, Android 버전, 앱 버전, 언어, 스토어 버전인지 테스트 버전인지 여부.</li>
-<li><strong>식별자:</strong> 설치할 때 앱이 만드는 무작위 ID(Analytics 앱 인스턴스 ID, Crashlytics 설치 ID, Firebase 설치 ID). 여러분이 누구인지 알려 주지 않으며, 게임을 다시 설치하거나 데이터를 지우면 새로 바뀝니다.</li>
-<li><strong>대략적인 위치:</strong> Google이 IP 주소로 추정하는 국가와 지역. EU, 영국, 스위스 사용자의 경우 Google 애널리틱스는 IP 주소를 기록하거나 저장하지 않습니다.</li>
-<li><strong>오류 보고서:</strong> 오류의 기술적 기록, 그 순간의 기기와 앱에 관한 기술 정보, 플레이 중이던 레벨과 화면.</li>
+<li><strong>레벨 20부터</strong> “내 하트” 패널의 <strong>“동영상 보기 (+1)”</strong> 버튼으로 동영상 1편을 보고 하트 1개를 받습니다. 언제나 여러분의 선택이며, 하루 최대 10번입니다.</li>
+<li><strong>레벨 35부터</strong> 레벨을 클리어하고 넘어갈 때 전면 광고가 나올 수 있습니다. 클리어 3번에 최대 1번, 3분 이상 간격입니다. 실패한 레벨 뒤, 첫 세션 동안, 이벤트 레벨에서는 절대 나오지 않습니다.</li>
+<li>레벨 20에 도달하기 전에는 광고 서비스가 아예 시작되지 않습니다. 광고 데이터가 기기 밖으로 나가지 않습니다.</li>
 </ul>
-<p><strong>수집하지 않는 정보:</strong> 이름, 이메일 주소, 전화번호, 연락처, 사진이나 파일, 정확한 위치, 광고 ID, Android ID, 결제 정보, 여러분이 입력하는 모든 내용.</p>
-<p><strong>이용 목적:</strong> 버그와 오류를 고치고, 레벨 난이도를 맞추고, 게임의 어떤 부분을 즐기시는지 알기 위해서입니다. 광고나 프로파일링에 쓰지 않으며, 판매하지 않습니다. <strong>처리 근거:</strong> 여러분의 동의(EU 일반 개인정보 보호법(GDPR) 제6조 제1항 (a)).</p>
-<p><strong>iOS:</strong> 현재 iOS 버전은 ‘네’를 선택해도 아무것도 전송하지 않습니다. 이것이 바뀔 경우 먼저 이 페이지를 수정합니다.</p>
+<p><strong>Google 광고 서비스가 수집하는 것</strong>(Google이 자사 SDK에 대해 공개한 목록): 대략적인 위치 추정에 쓰일 수 있는 <strong>IP 주소</strong>, 앱 실행·탭·동영상 시청 같은 <strong>상호작용</strong>, 실행 시간·멈춤·전력 사용 같은 <strong>진단 정보</strong>, 그리고 기기의 <strong>광고 ID</strong>와 app set ID 같은 <strong>식별자</strong>. 이 데이터는 전송 중 암호화(TLS)됩니다. Google은 Google 자체 개인정보처리방침에 따라 광고 표시와 측정, 부정행위 방지에 이를 사용합니다.</p>
+<p><strong>Google 동의 양식:</strong> 유럽 경제 지역, 영국, 스위스 및 Google이 요구하는 그 밖의 지역에서는 광고가 처음 나올 수 있을 때(홈 화면이나 지도에서, 레벨 플레이 중에는 아님) Google 양식이 한 번 열립니다. 답하기 전에는 광고를 요청하지 않습니다. Google이 광고를 맞춤화하고 제시된 목적으로 데이터를 쓰는 것에 동의할지 선택할 수 있습니다. 거부해도 Google은 맞춤화되지 않은 광고나 제한된 광고를 보여줄 수 있으며, 이런 광고는 더 적은 데이터를 사용합니다(예: 광고 횟수 집계, 부정행위 방지).</p>
+<p><strong>선택 바꾸기:</strong> 설정 → <strong>“광고 설정”</strong>에서 Google 양식을 다시 엽니다(양식이 적용되는 지역에서 표시됩니다). 모든 Android 휴대전화에서는 시스템 설정(개인정보 보호 → 광고, 또는 Google → 광고, 기기마다 다름)에서 광고 ID를 재설정하거나 삭제할 수도 있습니다.</p>
+<p><strong>“광고 없이”:</strong> 이 구매로 레벨 사이 광고가 영구히 사라집니다. 직접 선택해서 보는 동영상은 계속 제공되므로, 이를 위해 광고 서비스는 계속 작동합니다.</p>
+<p>광고와 통계는 별개의 선택입니다. 통계에 동의해도 광고가 맞춤화되지 않고, 광고에 동의해도 통계가 켜지지 않습니다.</p>
 
-<h2>3. 답하기 전, 그리고 ‘아니요’를 선택한 뒤</h2>
+<h2>3. 인앱 구매</h2>
+<p>구매는 선택 사항입니다(“광고 없이”, 이달의 프리미엄 패스, 코인 팩, 하트 가득 채우기). 레벨을 깨는 데 필요한 것은 팔지 않습니다. 결제는 Google 약관에 따라 <strong>Google Play</strong>가 처리합니다. 카드와 결제 정보는 Google로 가며 <strong>당사에는 절대 오지 않습니다</strong>. 게임은 Google Play로부터 구매한 상품과, 상품을 전달하기 위한 주문 토큰만 받습니다. 기기에는 보유 항목과 1항의 지문을 저장합니다. 환불은 Google Play를 통해 이루어집니다.</p>
+<p>통계에 동의했다면(4항), 게임은 “코인 구매” 이벤트(어떤 팩, 코인 수, 레벨. 가격이나 영수증은 보내지 않음)도 보내며, Google 문서대로 Firebase가 인앱 구매 완료(상품, 가격, 통화, 수량)를 자동으로 기록합니다. 이는 게임을 이해하는 데에만 쓰이며 광고에는 절대 쓰이지 않습니다.</p>
+
+<h2>4. 동의한 경우의 통계와 비정상 종료 보고서 (Android)</h2>
+<p>동의하면 게임은 Google의 두 서비스, <strong>Google Analytics for Firebase</strong>와 <strong>Firebase Crashlytics</strong>를 사용합니다.</p>
 <ul>
-<li>게임은 모든 수집이 꺼진 상태로 시작합니다.</li>
-<li>답하시기 전까지는 아무것도 기기 밖으로 나가지 않습니다. 해당 세션의 이벤트는 메모리에서만 대기하며(저장 공간에는 쓰지 않습니다), 그 세션 동안 ‘네’를 선택하지 않으면 폐기됩니다. 답하기 전에 기록된 오류 보고서는 다음 실행 때 삭제되며, 나중에 ‘네’를 선택해도 전송되지 않습니다.</li>
-<li>‘아니요’를 선택하면(질문 카드에서든, 나중에 설정에서든) 모든 수집이 즉시 멈추고, 기기에 남아 있던 미전송 오류 보고서는 삭제되며, 그 뒤로는 아무것도 보관하지 않습니다.</li>
-<li>답하지 않고 카드를 닫으면 아무것도 결정되지 않습니다. 다음 세션에서 다시 여쭤봅니다.</li>
+<li><strong>게임 이벤트:</strong> 레벨 시작·클리어·실패·중단(레벨 번호, 시도 횟수, 시간, 사용한 부스터, 남은 도토리, 실패 원인, 일반 레벨인지 이벤트 레벨인지), 부스터 사용, 코인 사용(무엇에, 얼마나), 코인 구매(3항), 연 화면(지도, 마을, 앨범, 상점, 설정 등).</li>
+<li><strong>Firebase가 자동으로 기록하는 이벤트:</strong> 첫 실행, 세션 시작, 앱 사용 시간, 앱 업데이트, 시스템 업데이트, 삭제, 인앱 구매 완료.</li>
+<li><strong>기술 정보:</strong> 기기 제조사와 모델, Android 버전, 앱 버전, 언어, 스토어 버전인지 테스트 버전인지.</li>
+<li><strong>식별자:</strong> 설치 시 앱이 만드는 무작위 식별자(Analytics 앱 인스턴스 ID, Crashlytics 설치 ID, Firebase 설치 ID). 여러분이 누구인지 알려주지 않으며, 재설치하거나 데이터를 지우면 바뀝니다. Firebase는 광고 ID도 Android ID도 읽지 않습니다.</li>
+<li><strong>대략적인 위치:</strong> IP 주소로 Google이 추정하는 국가와 지역. EU, 영국, 스위스 사용자의 경우 Google 애널리틱스는 IP 주소를 기록하거나 저장하지 않습니다.</li>
+<li><strong>비정상 종료 보고서:</strong> 종료의 기술적 기록, 그 순간의 기기와 앱의 기술 정보, 플레이 중이던 레벨과 화면.</li>
 </ul>
+<p><strong>통계를 위해 절대 수집하지 않는 것:</strong> 이름, 이메일 주소, 전화번호, 연락처, 사진이나 파일, 정확한 위치, 광고 ID, Android ID, 결제 정보, 입력한 내용.</p>
+<p><strong>목적:</strong> 버그와 비정상 종료 수정, 레벨 난이도 조정, 게임의 어떤 부분이 사랑받는지 파악. 이 데이터는 광고나 프로파일링에 쓰이지 않으며 절대 판매되지 않습니다. <strong>법적 근거:</strong> 여러분의 동의(GDPR 제6조 제1항 (a)).</p>
 
-<h2>4. 언제든지 선택을 바꿀 수 있습니다</h2>
-<p>홈 화면에서 톱니바퀴(<strong>설정</strong>)를 누른 다음 <strong>‘통계: 켬’</strong> 또는 <strong>‘통계: 끔’</strong> 줄을 누르세요. 질문이 다시 열리면 <strong>‘아니요’</strong> 또는 <strong>‘네, 좋아요’</strong>를 선택하시면 됩니다. 새 선택은 바로 적용되며, 어느 쪽을 선택해도 게임 내용은 달라지지 않습니다.</p>
-
-<h2>5. 보관 기간</h2>
+<h2>5. 답하기 전, 그리고 “아니요” 이후</h2>
 <ul>
-<li><strong>Analytics:</strong> 세부 이벤트 데이터는 2개월 동안 보관된 뒤 삭제됩니다. 집계 보고서(‘레벨 10에 도달한 플레이어 수’ 같은 합계)에는 식별자가 없으며 더 오래 보관될 수 있습니다.</li>
-<li><strong>Crashlytics:</strong> 오류 보고서와 그 식별자는 90일 동안 보관됩니다.</li>
+<li>게임은 모든 통계가 꺼진 상태로 시작합니다.</li>
+<li>답하기 전까지 통계는 기기 밖으로 나가지 않습니다. 현재 세션의 이벤트는 메모리에서만 대기하며(저장 공간에는 기록하지 않음), 그 세션 중에 동의하지 않으면 버려집니다. 답하기 전에 기록된 비정상 종료 보고서는 다음 실행 때 삭제되며, 나중에 동의해도 전송되지 않습니다.</li>
+<li>“아니요”를 선택하면(질문 카드에서, 또는 나중에 설정에서) 통계가 즉시 멈추고, 기기에서 전송 대기 중인 비정상 종료 보고서는 삭제되며, 더 이상 아무것도 보관하지 않습니다.</li>
+<li>답하지 않고 카드를 닫으면 아무것도 결정되지 않으며, 다음 세션에서 다시 묻습니다.</li>
+<li>이 질문은 통계에 관한 것뿐입니다. 광고는 별도의 선택이 있습니다(2항).</li>
 </ul>
-<p>‘아니요’를 선택하면 새로운 전송은 모두 멈추지만, 그 전에 전송된 데이터는 위 기간에 따릅니다. 이 데이터에는 이름이나 연락처가 없어서, 저희는 대개 어느 데이터가 여러분의 것인지 알 수 없습니다. 삭제를 원하시면 연락해 주세요. 최대한 도와드리겠습니다.</p>
 
-<h2>6. 처리 위탁과 국외 이전</h2>
-<p>Google은 Firebase 이용약관과 그에 딸린 데이터 처리 및 보안 약관에 따라, 저희의 수탁자로서 이 데이터를 처리합니다. 데이터는 전송 중 암호화되며(HTTPS), 동의 후 게임을 하는 동안 네트워크를 통해 전송되어 한국 밖을 포함해 Google이 시설을 둔 국가에서 처리될 수 있습니다. 이 경우에도 위 약관에 정한 보호 조치가 적용됩니다. 광고 관련 신호는 꺼 두었습니다. 광고 ID는 수집하지 않으며, 광고 관련 동의 신호는 항상 ‘거부’로 보냅니다. 저희는 이 데이터를 다른 누구와도 공유하지 않습니다.</p>
-<p>자세히 보기: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Firebase의 개인정보 보호 및 보안</a> · <a href="https://policies.google.com/privacy?hl=ko" rel="noopener noreferrer">Google 개인정보처리방침</a></p>
+<h2>6. 언제든지 마음을 바꿀 수 있습니다</h2>
+<p>홈 화면에서 톱니바퀴(<strong>설정</strong>)를 누르세요.</p>
+<ul>
+<li><strong>통계:</strong> <strong>“통계 보내기: 켬”</strong> 또는 <strong>“통계 보내기: 끔”</strong> 줄을 누르면 질문이 다시 열립니다. <strong>“아니요”</strong> 또는 <strong>“네, 좋아요”</strong>를 고르세요. 새 선택은 바로 적용되며, 어느 쪽이든 게임은 달라지지 않습니다.</li>
+<li><strong>광고:</strong> <strong>“광고 설정”</strong> 줄이 Google 동의 양식을 다시 엽니다(2항).</li>
+<li><strong>구매:</strong> <strong>“구매 복원”</strong> 줄로 구매한 것을 되찾습니다.</li>
+</ul>
 
-<h2>7. 광고와 결제</h2>
-<p>현재 버전에는 광고도 인앱 결제도 없습니다. 추가하게 되면 해당 버전을 출시하기 전에 이 페이지를 수정하고, 법에서 요구하는 경우 다시 동의를 여쭙겠습니다.</p>
+<h2>7. 데이터 보관 기간</h2>
+<ul>
+<li><strong>Analytics:</strong> 상세 이벤트 데이터는 2개월 동안 보관한 뒤 삭제합니다. 집계 보고서(“레벨 10에 도달한 플레이어 수” 같은 합계)에는 식별자가 없으며 더 오래 보관될 수 있습니다.</li>
+<li><strong>Crashlytics:</strong> 비정상 종료 보고서와 그 식별자는 90일 동안 보관합니다.</li>
+<li><strong>광고:</strong> Google은 광고 서비스가 수집한 데이터를 Google 자체 보관 규칙에 따라 보관합니다(아래 링크).</li>
+</ul>
+<p>“아니요”를 고르면 새로운 통계는 멈추고, 이미 보낸 데이터는 위 기간을 따릅니다. 이 데이터에는 이름이나 연락처가 없어서 보통 어떤 데이터가 여러분의 것인지 알 수 없습니다. 삭제를 시도해 주길 원하시면 연락해 주세요(문의 참조).</p>
 
-<h2>8. 권한</h2>
-<p>게임은 연락처, 파일, 사진, 위치, 마이크, 카메라에 접근하지 않습니다.</p>
+<h2>8. 데이터를 처리하는 곳</h2>
+<p><strong>통계:</strong> Google이 당사를 대신해 서비스 제공자(“처리자”)로서 Firebase 약관과 그 데이터 처리·보안 약관에 따라 처리합니다. 당사는 Firebase의 광고 신호를 꺼 두었습니다. 여러분의 통계는 광고와 절대 연결되지 않습니다.</p>
+<p><strong>광고:</strong> Google은 2항의 데이터를 받아, EU 사용자 동의 정책을 포함한 Google 자체 정책에 따라 광고, 측정, 부정행위 방지에 사용합니다. <strong>구매:</strong> 결제는 Google Play가 처리합니다.</p>
+<p>데이터는 전송 중 암호화되며, Google 약관에 정한 보호 조치에 따라 Google이 시설을 둔 어느 나라에서든 처리될 수 있습니다. 당사는 이러한 Google 서비스 외에는 누구와도 데이터를 공유하지 않으며, 절대 판매하지 않습니다.</p>
+<p>자세히: <a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Firebase의 개인정보 보호 및 보안</a> · <a href="https://policies.google.com/technologies/partner-sites?hl=ko" rel="noopener noreferrer">Google 서비스를 사용하는 앱의 정보를 Google이 사용하는 방법</a> · <a href="https://policies.google.com/technologies/retention?hl=ko" rel="noopener noreferrer">Google의 데이터 보관 방법</a> · <a href="https://policies.google.com/privacy?hl=ko" rel="noopener noreferrer">Google 개인정보처리방침</a></p>
 
-<h2>9. 아동</h2>
-<p>Acorn Crew는 만 13세 미만 아동을 위해 만든 게임이 아니며, 저희는 아동의 개인정보를 알면서 수집하지 않습니다. 게임은 나이나 이름을 묻지 않습니다. 아이가 게임을 한다면 보호자께서 ‘아니요’를 선택하시거나 설정에서 통계를 꺼 주시면 아무것도 전송되지 않습니다. 한국에서는 만 14세 미만 아동의 개인정보를 처리하려면 법정대리인의 동의가 필요하며, 일부 국가에서는 만 16세 미만까지 보호자의 동의가 필요합니다. 아동의 데이터가 전송되었다고 생각되시면 연락해 주세요.</p>
+<h2>9. 권한</h2>
+<p>게임이 Android에 요청하는 권한: 인터넷과 네트워크 상태(광고, 통계, 구매), Google 광고 서비스가 쓰는 광고 ID와 Android 광고 서비스(기여 분석과 주제), Google Play 결제(구매), 진동, Google 라이브러리가 쓰는 짧은 백그라운드 작업. 연락처, 파일, 사진, 위치, 마이크, 카메라에는 접근하지 않습니다.</p>
 
-<h2>10. 여러분의 권리</h2>
-<p>거주하시는 지역의 법(한국의 개인정보 보호법, 유럽의 GDPR 등)에 따라 개인정보의 열람, 정정, 삭제, 처리 정지를 요구하실 수 있습니다. 동의는 설정에서 언제든지 철회할 수 있으며(4번 참고), 철회해도 게임에서 잃는 것은 없습니다. 개인정보 보호 감독기관(한국에서는 개인정보보호위원회)에 민원을 제기하실 수도 있습니다.</p>
+<h2>10. 아동</h2>
+<p>Acorn Crew는 13세 미만 아동을 위해 만든 게임이 아니며, 광고도 아동용으로 인증된 광고가 아닌 일반 광고입니다. 당사는 아동의 개인정보를 고의로 수집하지 않으며, 게임은 나이나 이름을 묻지 않습니다. 보호자는 통계에서 “아니요”를 선택하고, Google 양식이 나오는 지역에서는 맞춤 광고를 거부할 수 있습니다. 일부 국가에서는 16세 미만(또는 현지 법이 정한 더 낮은 나이 미만)이 동의하려면 보호자의 동의가 필요합니다(한국은 14세 미만). 아동의 데이터가 전송되었다고 생각되면 연락해 주세요.</p>
 
-<h2>11. 변경</h2>
-<p>이 방침이 바뀌면 이 페이지와 맨 위의 날짜를 수정합니다.</p>
+<h2>11. 플랫폼</h2>
+<p>Acorn Crew는 현재 Android(Google Play)에서만 배포됩니다. 다른 버전을 출시하기 전에 이 페이지를 업데이트합니다.</p>
 
-<h2>문의 (개인정보 보호 담당)</h2>
+<h2>12. 여러분의 권리</h2>
+<p>거주 지역(예: 유럽의 GDPR, 한국의 개인정보 보호법)에 따라 데이터의 열람, 정정, 삭제를 요청하거나 이용에 반대할 수 있습니다. 설정에서 언제든 동의를 철회할 수 있으며(6항), 게임에서 잃는 것은 없습니다. 개인정보 보호 기관(한국은 개인정보보호위원회)에 신고할 수도 있습니다.</p>
+
+<h2>13. 변경</h2>
+<p>이 방침이 바뀌면, 해당 버전이 출시되기 전에 이 페이지와 위의 날짜를 업데이트합니다.</p>
+
+<h2>문의</h2>
+<p>GoodApps Studio — <a href="mailto:sylvain69740@gmail.com">sylvain69740@gmail.com</a></p>
+</section>
+
+<!-- ============================================================== 繁體中文（台灣） -->
+<section id="zh-TW" lang="zh-TW">
+<h1>Acorn Crew — 隱私權政策</h1>
+<p class="date">生效日期：2026 年 11 月 9 日</p>
+<p><strong>Acorn Crew</strong>（Android 套件 <code>com.goodapps.acorncrew</code>）是由 GoodApps Studio（以下稱「我們」）發行的益智遊戲。本頁以淺白的文字說明：遊戲在你的裝置上保存什麼、傳送什麼、傳給誰，以及你可以做哪些選擇。</p>
+
+<div class="short">
+<h2>重點摘要</h2>
+<ul>
+<li><strong>不需要帳號</strong>，也不用登入。你的進度<strong>保存在你的裝置上</strong>。</li>
+<li>遊戲中有<strong>由 Google AdMob 提供的廣告</strong>：你自己選擇觀看的影片（第 20 關起），以及從第 35 關起，在部分關卡之間出現的全螢幕廣告。Google 的廣告服務會收到你的 IP 位址、你與廣告的互動、技術資料，以及裝置的<strong>廣告 ID</strong>。在法律要求的地區（歐盟、英國、瑞士等），會先出現 <strong>Google 的同意表單</strong>，你也可以在「設定」→<strong>「廣告選項」</strong>重新開啟。</li>
+<li><strong>應用程式內購買</strong>（例如「免廣告」）完全自由選擇，由 <strong>Google Play</strong> 處理。我們永遠看不到你的付款資料。</li>
+<li>遊戲統計與當機報告<strong>只有在你選擇「好，我願意」時</strong>才會傳送到 Google Firebase。其中絕不包含你的廣告 ID，也絕不用於廣告。</li>
+<li>絕不蒐集你的姓名、電子郵件或聯絡人。我們絕不販售資料。</li>
+</ul>
+</div>
+
+<h2>1. 留在你裝置上的資料</h2>
+<p>遊戲會把進度存在應用程式私人儲存空間中的一個檔案裡：達到的關卡、金幣、道具、星星、村莊、相簿、衣櫥、生命、音效／音樂／震動設定、你對統計問題的回答與回答日期、廣告計數（上次廣告的時間、今天看過幾支影片、是否擁有「免廣告」），以及你擁有的購買項目，每一項附上訂單的簡短指紋（絕不保存訂單本身或任何付款資料），以免重複發放。遊戲也會保留最近數百筆遊戲事件（例如過關）的本機紀錄，只在裝置上使用。</p>
+<p>這個檔案永遠不會傳給我們：我們沒有遊戲伺服器。如果你的手機開啟了系統備份，備份可能會在你自己的 Google 帳戶中保留一份副本；我們無法存取。</p>
+<p>解除安裝遊戲或清除其資料，就會刪除全部內容。可長期保有的購買（「免廣告」、當月的進階通行證）可以在設定中用<strong>「恢復購買」</strong>取回。</p>
+
+<h2>2. 廣告</h2>
+<p><strong>提供者：</strong>Google AdMob（Google Mobile Ads SDK），是遊戲中唯一的廣告聯播網。沒有橫幅廣告。</p>
+<ul>
+<li><strong>第 20 關起</strong>，在「你的生命」面板中，<strong>「看段影片（+1）」</strong>按鈕可用一支影片換一條生命。看不看永遠由你決定，每天最多 10 次。</li>
+<li><strong>第 35 關起</strong>，在過關後繼續前進時，可能會出現全螢幕廣告：每過 3 關最多一次，且間隔至少 3 分鐘。輸掉關卡後、第一次遊玩期間、活動關卡中都絕不會出現。</li>
+<li>在到達第 20 關之前，廣告服務根本不會啟動：沒有任何廣告資料會離開你的裝置。</li>
+</ul>
+<p><strong>Google 廣告服務蒐集的資料</strong>（Google 為其 SDK 公布的清單）：你的 <strong>IP 位址</strong>，可能用來推估大致位置；<strong>互動</strong>，例如啟動應用程式、點按與觀看影片；<strong>診斷資料</strong>，例如啟動時間、卡頓與耗電；以及<strong>識別碼</strong>：裝置的<strong>廣告 ID</strong> 與 app set ID。這些資料在傳輸時會加密（TLS）。Google 依其自身的隱私權政策，將其用於顯示與評估廣告，以及防範詐欺。</p>
+<p><strong>Google 的同意表單：</strong>在歐洲經濟區、英國、瑞士及其他 Google 要求的地區，第一次可能出現廣告時（在主畫面或地圖上，絕不在關卡進行中），Google 的表單會開啟一次。你回答之前，不會請求任何廣告。你可以選擇是否允許 Google 個人化廣告，並將你的資料用於表單列出的目的。如果你拒絕，Google 仍可能顯示非個人化或受限的廣告，這類廣告使用較少的資料（例如用於計算廣告次數與防範詐欺）。</p>
+<p><strong>變更你的選擇：</strong>「設定」→<strong>「廣告選項」</strong>可重新開啟 Google 的表單（此項目會在適用表單的地區出現）。在任何 Android 手機上，你也可以在系統設定中重設或刪除廣告 ID（隱私權 → 廣告，或 Google → 廣告，依手機而定）。</p>
+<p><strong>「免廣告」：</strong>這項購買會永久移除關卡之間的廣告。你自己選擇觀看的影片仍可使用，因此廣告服務會為它們保持運作。</p>
+<p>廣告與統計是兩個獨立的選擇：同意統計不會讓廣告個人化，同意廣告也不會開啟統計。</p>
+
+<h2>3. 應用程式內購買</h2>
+<p>購買完全自由選擇：「免廣告」、當月的進階通行證、金幣包、補滿生命。過關所需的東西一律不賣。付款由 <strong>Google Play</strong> 依 Google 的條款處理：你的信用卡與付款資料交給 Google，<strong>絕不會傳給我們</strong>。遊戲只會從 Google Play 收到購買了哪項商品，以及用來交付商品的訂單權杖；裝置上只保存你擁有的項目與第 1 點所述的指紋。退款透過 Google Play 辦理。</p>
+<p>如果你同意了統計（第 4 點），遊戲也會傳送「購買金幣」事件（哪一包、多少金幣、你的關卡；絕不含價格或收據），而且依 Google 的說明，Firebase 會自動記錄一筆應用程式內購買已完成（商品、價格、幣別、數量）。這些只用來了解遊戲，絕不用於廣告。</p>
+
+<h2>4. 你同意後的統計與當機報告（Android）</h2>
+<p>你同意後，遊戲會使用 Google 的兩項服務：<strong>Google Analytics for Firebase</strong> 與 <strong>Firebase Crashlytics</strong>。</p>
+<ul>
+<li><strong>遊戲事件：</strong>關卡開始、過關、失敗或放棄（關卡編號、第幾次嘗試、時間、使用的道具、剩下的橡實、失敗原因、主線或活動關卡）、使用道具、花費金幣（花在什麼、多少）、購買金幣（第 3 點）、開啟的畫面（地圖、村莊、相簿、商店、設定等）。</li>
+<li><strong>Firebase 自動記錄的事件：</strong>首次開啟、工作階段開始、使用時間、應用程式更新、系統更新、解除安裝、應用程式內購買完成。</li>
+<li><strong>技術資訊：</strong>裝置品牌與型號、Android 版本、應用程式版本、語言，以及是商店版本還是測試版本。</li>
+<li><strong>識別碼：</strong>應用程式安裝時產生的隨機識別碼（Analytics 應用程式執行個體 ID、Crashlytics 安裝 ID、Firebase 安裝 ID）。它們不會透露你是誰，重新安裝或清除資料後就會改變。Firebase 不會讀取你的廣告 ID 或 Android ID。</li>
+<li><strong>大致位置：</strong>Google 依你的 IP 位址推估的國家與地區。對歐盟、英國與瑞士的使用者，Google Analytics 不會記錄或保存 IP 位址。</li>
+<li><strong>當機報告：</strong>當機的技術紀錄、當下裝置與應用程式的技術資訊，以及你所在的關卡與畫面。</li>
+</ul>
+<p><strong>統計絕不蒐集：</strong>你的姓名、電子郵件地址、電話號碼、聯絡人、照片或檔案、精確位置、廣告 ID、Android ID、付款資料，或你輸入的任何內容。</p>
+<p><strong>目的：</strong>修正錯誤與當機、調整關卡難度，並了解玩家喜歡遊戲的哪些部分。這些資料不用於廣告或建立個人檔案，也絕不販售。<strong>法律依據：</strong>你的同意（GDPR 第 6 條第 1 項 (a) 款）。</p>
+
+<h2>5. 回答之前，以及選擇「不用了」之後</h2>
+<ul>
+<li>遊戲啟動時，所有統計都是關閉的。</li>
+<li>在你回答之前，沒有任何統計會離開裝置。本次工作階段的事件只暫存在記憶體中（絕不寫入儲存空間），如果你在這次工作階段中沒有同意，就會被丟棄。回答之前記錄的當機報告會在下次啟動時刪除，即使你之後同意也不會傳送。</li>
+<li>如果你選擇「不用了」（在問題卡片上，或之後在設定中），統計會立即停止，裝置上尚待傳送的當機報告會被刪除，之後不再保存任何資料。</li>
+<li>不回答就關閉卡片，不代表任何決定；遊戲會在之後的工作階段再問一次。</li>
+<li>這個問題只與統計有關。廣告有自己的選項（第 2 點）。</li>
+</ul>
+
+<h2>6. 隨時改變心意</h2>
+<p>在主畫面點齒輪（<strong>設定</strong>）：</p>
+<ul>
+<li><strong>統計：</strong><strong>「分享統計資料：開」</strong>或<strong>「分享統計資料：關」</strong>這一行會重新開啟問題：選擇<strong>「不用了」</strong>或<strong>「好，我願意」</strong>。新的選擇立即生效，不論選哪一個，遊戲內容都不會改變。</li>
+<li><strong>廣告：</strong><strong>「廣告選項」</strong>這一行會重新開啟 Google 的同意表單（第 2 點）。</li>
+<li><strong>購買：</strong><strong>「恢復購買」</strong>這一行可取回你買過的項目。</li>
+</ul>
+
+<h2>7. 資料保存多久</h2>
+<ul>
+<li><strong>Analytics：</strong>詳細的事件資料保存 2 個月後刪除。彙總報表（例如「到達第 10 關的玩家人數」這類總數）不含任何識別碼，可能保存較久。</li>
+<li><strong>Crashlytics：</strong>當機報告及其識別碼保存 90 天。</li>
+<li><strong>廣告：</strong>Google 依其自身的保存規則保存廣告服務蒐集的資料（連結見下方）。</li>
+</ul>
+<p>選擇「不用了」會停止任何新的統計；已傳送的資料依上述期限處理。由於這些資料不含姓名或聯絡方式，我們通常無法分辨哪些是你的資料。如果你希望我們嘗試刪除，請與我們聯絡（見「聯絡我們」）。</p>
+
+<h2>8. 誰處理資料，在哪裡處理</h2>
+<p><strong>統計：</strong>Google 以服務供應商（「資料處理者」）的身分代表我們處理，依循 Firebase 條款及其資料處理與安全條款。我們已關閉 Firebase 中的廣告信號：你的統計絕不會與廣告連結。</p>
+<p><strong>廣告：</strong>Google 會收到第 2 點所述的資料，並依其自身政策（包括歐盟使用者同意政策）用於廣告、成效評估與防範詐欺。<strong>購買：</strong>付款由 Google Play 處理。</p>
+<p>資料在傳輸時會加密，並可能在 Google 設有設施的任何國家處理，適用 Google 條款所訂的保護措施。除了這些 Google 服務，我們不與任何人分享資料，也絕不販售資料。</p>
+<p>更多資訊：<a href="https://firebase.google.com/support/privacy" rel="noopener noreferrer">Firebase 的隱私權與安全性</a> · <a href="https://policies.google.com/technologies/partner-sites?hl=zh-TW" rel="noopener noreferrer">Google 如何使用採用其服務的應用程式所提供的資訊</a> · <a href="https://policies.google.com/technologies/retention?hl=zh-TW" rel="noopener noreferrer">Google 如何保留資料</a> · <a href="https://policies.google.com/privacy?hl=zh-TW" rel="noopener noreferrer">Google 隱私權政策</a></p>
+
+<h2>9. 權限</h2>
+<p>遊戲向 Android 要求的權限：網際網路與網路狀態（廣告、統計、購買）；Google 廣告服務使用的廣告 ID 與 Android 廣告服務（歸因與主題）；Google Play 帳單（購買）；震動；以及 Google 程式庫使用的短暫背景工作。遊戲不會存取你的聯絡人、檔案、照片、位置、麥克風或相機。</p>
+
+<h2>10. 兒童</h2>
+<p>Acorn Crew 並非為 13 歲以下兒童設計，其廣告是一般廣告，不是經兒童認證的廣告。我們不會在知情的情況下蒐集兒童的個人資料；遊戲從不詢問年齡或姓名。家長可以在統計問題選擇「不用了」，並在出現 Google 表單的地區拒絕個人化廣告。在某些國家，未滿 16 歲（或當地法律規定的較低年齡）需要家長同意才能選擇同意。如果你認為有兒童的資料被傳送，請與我們聯絡。</p>
+
+<h2>11. 平台</h2>
+<p>Acorn Crew 目前只在 Android（Google Play）上發行。推出任何其他版本之前，我們會先更新本頁。</p>
+
+<h2>12. 你的權利</h2>
+<p>依你居住的地區（例如歐洲的 GDPR、台灣的個人資料保護法），你可以要求查閱、更正或刪除你的資料，或反對資料的使用。你可以隨時在設定中撤回同意（見第 6 點），不會失去遊戲中的任何東西。你也可以向當地的資料保護主管機關申訴。</p>
+
+<h2>13. 變更</h2>
+<p>如果本政策有所變更，我們會在相關版本推出前更新本頁及頂端的日期。</p>
+
+<h2>聯絡我們</h2>
 <p>GoodApps Studio — <a href="mailto:sylvain69740@gmail.com">sylvain69740@gmail.com</a></p>
 </section>
 
 </main>
 <footer>
-<p>Acorn Crew · <code>com.goodapps.acorncrew</code> · GoodApps Studio · 2026-11-06</p>
+<p>Acorn Crew · <code>com.goodapps.acorncrew</code> · GoodApps Studio · 2026-11-09</p>
 </footer>
 <script>
 (function () {
-  var LANGS = ["en", "fr", "es", "de", "pt-BR", "ja", "ko"];
+  var LANGS = ["en", "fr", "es", "de", "pt-BR", "it", "ja", "ko", "zh-TW"];
   function match(v) {
     if (!v) return null;
     v = String(v).toLowerCase().replace("_", "-");
